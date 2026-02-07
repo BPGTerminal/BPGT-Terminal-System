@@ -1,21 +1,21 @@
 // BPGT Authentication Library
 
-// Login function
+// Login function with CORS fix
 async function login(username, password) {
     try {
+        const formData = new FormData();
+        formData.append('action', 'login');
+        formData.append('username', username);
+        formData.append('password', password);
+        
         const response = await fetch(CONFIG.AUTH_API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'login',
-                username: username,
-                password: password
-            })
+            body: formData,
+            redirect: 'follow'
         });
         
-        const data = await response.json();
+        const text = await response.text();
+        const data = JSON.parse(text);
         return data;
     } catch (error) {
         console.error('Login error:', error);
