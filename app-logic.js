@@ -1,4 +1,4 @@
-// BPGT App Logic - V3.0
+// BPGT App Logic - V3.0 FIXED with QR Scanner
 
 // Protect this page - require login
 requireLogin();
@@ -64,6 +64,38 @@ async function loadVehicles() {
 
 // Initialize
 loadVehicles();
+
+// QR Code Scanner Setup
+let html5QrcodeScanner = null;
+
+function startQRScanner() {
+    const qrReaderDiv = document.getElementById('qr-reader');
+    qrReaderDiv.style.display = 'block';
+    
+    html5QrcodeScanner = new Html5QrcodeScanner(
+        "qr-reader",
+        { fps: 10, qrbox: {width: 250, height: 250} },
+        false
+    );
+    
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    // Put scanned text into plate number field
+    document.getElementById('plate-number').value = decodedText.toUpperCase();
+    document.getElementById('plate-number').dispatchEvent(new Event('blur'));
+    
+    // Stop scanning
+    html5QrcodeScanner.clear();
+    document.getElementById('qr-reader').style.display = 'none';
+    
+    alert('✅ Plate scanned: ' + decodedText);
+}
+
+function onScanFailure(error) {
+    // Handle scan failure silently
+}
 
 // Plate number input - auto-populate vehicle info
 const plateNumberInput = document.getElementById('plate-number');
@@ -173,9 +205,6 @@ typeSelect.addEventListener('change', function() {
 });
 
 // FIXED PASSENGER COUNTING
-// Total = Adults + Children ONLY
-// Seniors, PWD, Pregnant are subcategories
-
 const passengerInputs = document.querySelectorAll('.passenger-count');
 
 function calculateTotals() {
@@ -205,7 +234,7 @@ document.getElementById('trip-date').valueAsDate = new Date();
 const now = new Date();
 document.getElementById('trip-time').value = now.toTimeString().slice(0, 5);
 
-// Form submission
+// Form submission - FIXED TO USE GET REQUEST
 document.getElementById('passenger-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -250,7 +279,8 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
     const totalFemales = adultFemale + childFemale;
     const totalPassengers = adultTotal + childTotal; // FIXED: Only adults + children
     
-    const formData = {
+    // Build URL with parameters
+    const params = new URLSearchParams({
         tripDate: document.getElementById('trip-date').value,
         tripTime: document.getElementById('trip-time').value,
         type: type,
@@ -276,15 +306,13 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
         pregnant: pregnant,
         totalPassengers: totalPassengers,
         username: user.username
-    };
+    });
     
     try {
-        const response = await fetch(CONFIG.DATA_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
+        const url = CONFIG.DATA_API_URL + '?' + params.toString();
+        const response = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow'
         });
         
         const result = await response.json();
