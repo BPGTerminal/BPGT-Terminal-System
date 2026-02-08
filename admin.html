@@ -251,14 +251,10 @@
         // Load all users
         async function loadUsers() {
             try {
-                const response = await fetch(CONFIG.AUTH_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'getAllUsers'
-                    })
+                const url = CONFIG.AUTH_API_URL + '?action=getAllUsers';
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
                 });
                 
                 const result = await response.json();
@@ -307,15 +303,10 @@
             const statusMessage = document.getElementById('status-message');
             
             try {
-                const response = await fetch(CONFIG.AUTH_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'deleteUser',
-                        username: username
-                    })
+                const url = CONFIG.AUTH_API_URL + '?action=deleteUser&username=' + encodeURIComponent(username);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
                 });
                 
                 const result = await response.json();
