@@ -1,21 +1,16 @@
-// BPGT Authentication Library
+// BPGT Authentication Library - FIXED VERSION
 
-// Login function with CORS fix
+// Login function - WORKING!
 async function login(username, password) {
     try {
-        const formData = new FormData();
-        formData.append('action', 'login');
-        formData.append('username', username);
-        formData.append('password', password);
+        const url = CONFIG.AUTH_API_URL + '?action=login&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password);
         
-        const response = await fetch(CONFIG.AUTH_API_URL, {
-            method: 'POST',
-            body: formData,
+        const response = await fetch(url, {
+            method: 'GET',
             redirect: 'follow'
         });
         
-        const text = await response.text();
-        const data = JSON.parse(text);
+        const data = await response.json();
         return data;
     } catch (error) {
         console.error('Login error:', error);
@@ -23,20 +18,14 @@ async function login(username, password) {
     }
 }
 
-// Register function
+// Register function - WORKING!
 async function register(username, password, fullName) {
     try {
-        const response = await fetch(CONFIG.AUTH_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'register',
-                username: username,
-                password: password,
-                fullName: fullName
-            })
+        const url = CONFIG.AUTH_API_URL + '?action=register&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password) + '&fullName=' + encodeURIComponent(fullName);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow'
         });
         
         const data = await response.json();
@@ -50,16 +39,11 @@ async function register(username, password, fullName) {
 // Reset password function
 async function resetPassword(username, newPassword) {
     try {
-        const response = await fetch(CONFIG.AUTH_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'resetPassword',
-                username: username,
-                newPassword: newPassword
-            })
+        const url = CONFIG.AUTH_API_URL + '?action=resetPassword&username=' + encodeURIComponent(username) + '&newPassword=' + encodeURIComponent(newPassword);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow'
         });
         
         const data = await response.json();
