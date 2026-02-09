@@ -255,6 +255,33 @@
                 <div class="form-group">
                     <label for="plate-number">Plate Number *</label>
                     <input type="text" id="plate-number" required placeholder="e.g., ABC 1234" style="text-transform: uppercase;">
+                    
+                    <!-- QR Scanner Button -->
+                    <button type="button" id="qr-scan-btn" style="
+                        margin-top: 8px;
+                        width: 100%;
+                        padding: 10px;
+                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    " onclick="startQRScanner()">
+                        📷 Scan QR Code
+                    </button>
+                    
+                    <!-- QR Reader Container -->
+                    <div id="qr-reader" style="
+                        display: none;
+                        margin-top: 12px;
+                        width: 100%;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    "></div>
                 </div>
             </div>
 
@@ -404,6 +431,9 @@
             <div class="status-message" id="status-message"></div>
         </form>
     </div>
+
+    <!-- QR Code Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <script src="config.js"></script>
     <script src="auth.js"></script>
