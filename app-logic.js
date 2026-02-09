@@ -1,5 +1,7 @@
-// BPGT App Logic - V4.0 REVENUE EDITION
-// Now includes terminal fee collection per Municipal Ordinance 2026-01
+// BPGT App Logic - V4.1 ENHANCEMENTS
+// 1. Tricycle day pass tracking (localStorage)
+// 2. Back camera default for QR scanner
+// 3. Photo capture for Arkabala tickets
 
 // Protect this page - require login
 requireLogin();
@@ -10,13 +12,50 @@ window.addEventListener('load', () => {
     if (user) {
         document.getElementById('user-name').textContent = user.fullName;
     }
+    
+    // Check and clear old tricycle payments at midnight
+    checkAndResetTricyclePayments();
 });
+
+// TRICYCLE DAY PASS MANAGEMENT (localStorage)
+function getTodayDateKey() {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+}
+
+function checkAndResetTricyclePayments() {
+    const storedDate = localStorage.getItem('bpgt_tricycle_date');
+    const todayDate = getTodayDateKey();
+    
+    if (storedDate !== todayDate) {
+        // New day - clear all tricycle payments
+        localStorage.removeItem('bpgt_tricycle_paid');
+        localStorage.setItem('bpgt_tricycle_date', todayDate);
+        console.log('✅ Tricycle payments reset for new day:', todayDate);
+    }
+}
+
+function markTricyclePaidToday(plateNumber, receiptNumber) {
+    const paidList = JSON.parse(localStorage.getItem('bpgt_tricycle_paid') || '{}');
+    paidList[plateNumber.toUpperCase()] = {
+        receipt: receiptNumber,
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('bpgt_tricycle_paid', JSON.stringify(paidList));
+    console.log('✅ Tricycle marked as paid:', plateNumber);
+}
+
+function isTricyclePaidToday(plateNumber) {
+    const paidList = JSON.parse(localStorage.getItem('bpgt_tricycle_paid') || '{}');
+    return paidList[plateNumber.toUpperCase()] || null;
+}
 
 // TERMINAL FEE STRUCTURE - Per Municipal Ordinance 2026-01
 const TERMINAL_FEES = {
     'BUS': {
-        'RORO': 60,          // Heavy bus
-        'CHERRY': 50         // Medium bus
+        'RORO': 60,
+        'CHERRY': 50
     },
     'SHUTTLE VAN': {
         'BARAKAH': 30,
@@ -37,7 +76,7 @@ const TERMINAL_FEES = {
         'N/A': 10
     },
     'TRICYCLE': {
-        'TODA': 10           // Per day pass
+        'TODA': 10
     }
 };
 
@@ -53,32 +92,17 @@ const transportGroups = {
 
 // Location lists
 const interMunicipalLocations = [
-    'BROOKE\'S POINT',
-    'PPC',
-    'ABORLAN',
-    'NARRA',
-    'S.ESPAÑOLA',
-    'QUEZON',
-    'BATARAZA',
-    'RIO-TUBA',
-    'BULILUYAN',
-    'SICUD',
-    'RIZAL'
+    'BROOKE\'S POINT', 'PPC', 'ABORLAN', 'NARRA', 'S.ESPAÑOLA',
+    'QUEZON', 'BATARAZA', 'RIO-TUBA', 'BULILUYAN', 'SICUD', 'RIZAL'
 ];
 
 const intraMunicipalLocations = [
-    'POBLACION',
-    'TUBTUB',
-    'PSU',
-    'MAINIT',
-    'IMULNOD',
-    'PANGOBILIAN'
+    'POBLACION', 'TUBTUB', 'PSU', 'MAINIT', 'IMULNOD', 'PANGOBILIAN'
 ];
 
-// Vehicle registry (will be populated from API)
+// Vehicle registry
 let vehicleRegistry = {};
 
-// Load vehicles from API
 async function loadVehicles() {
     try {
         const response = await fetch(CONFIG.VEHICLE_API_URL);
@@ -92,10 +116,9 @@ async function loadVehicles() {
     }
 }
 
-// Initialize
 loadVehicles();
 
-// QR Code Scanner Setup
+// QR CODE SCANNER - FORCE BACK CAMERA
 let html5QrcodeScanner = null;
 
 function startQRScanner() {
@@ -104,7 +127,12 @@ function startQRScanner() {
     
     html5QrcodeScanner = new Html5QrcodeScanner(
         "qr-reader",
-        { fps: 10, qrbox: {width: 250, height: 250} },
+        { 
+            fps: 10, 
+            qrbox: {width: 250, height: 250},
+            // FORCE BACK CAMERA
+            facingMode: "environment"
+        },
         false
     );
     
@@ -112,11 +140,9 @@ function startQRScanner() {
 }
 
 function onScanSuccess(decodedText, decodedResult) {
-    // Put scanned text into plate number field
     document.getElementById('plate-number').value = decodedText.toUpperCase();
     document.getElementById('plate-number').dispatchEvent(new Event('blur'));
     
-    // Stop scanning
     html5QrcodeScanner.clear();
     document.getElementById('qr-reader').style.display = 'none';
     
@@ -124,10 +150,56 @@ function onScanSuccess(decodedText, decodedResult) {
 }
 
 function onScanFailure(error) {
-    // Handle scan failure silently
+    // Silent handling
 }
 
-// Plate number input - auto-populate vehicle info
+// ARKABALA PHOTO CAPTURE
+let arkabalaPhotoData = null;
+
+function captureArkabalaPhoto() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // Use back camera
+    
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                arkabalaPhotoData = event.target.result; // Base64 data
+                
+                // Show preview
+                const preview = document.getElementById('arkabala-preview');
+                preview.innerHTML = `
+                    <img src="${arkabalaPhotoData}" style="max-width: 100%; border-radius: 8px; margin-top: 8px;">
+                    <button type="button" onclick="removeArkabalaPhoto()" style="
+                        margin-top: 8px;
+                        padding: 6px 12px;
+                        background: #ef4444;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        font-size: 12px;
+                        cursor: pointer;
+                    ">❌ Remove Photo</button>
+                `;
+                
+                alert('✅ Arkabala photo captured!');
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    input.click();
+}
+
+function removeArkabalaPhoto() {
+    arkabalaPhotoData = null;
+    document.getElementById('arkabala-preview').innerHTML = '';
+}
+
+// Plate number input - auto-populate
 const plateNumberInput = document.getElementById('plate-number');
 plateNumberInput.addEventListener('input', function() {
     this.value = this.value.toUpperCase();
@@ -147,8 +219,6 @@ plateNumberInput.addEventListener('blur', function() {
             const transportGroupSelect = document.getElementById('transport-group');
             transportGroupSelect.value = vehicleInfo.transportGroup;
             transportGroupSelect.classList.add('auto-filled');
-            
-            // Calculate terminal fee after vehicle info is filled
             calculateTerminalFee();
         }, 100);
     }
@@ -175,44 +245,85 @@ denominationSelect.addEventListener('change', function() {
         transportGroupSelect.disabled = false;
     }
     
-    // Trigger type change to update location lists
     document.getElementById('type').dispatchEvent(new Event('change'));
 });
 
-// Calculate terminal fee when transport group changes
 transportGroupSelect.addEventListener('change', calculateTerminalFee);
 
-// TERMINAL FEE CALCULATION
+// TERMINAL FEE CALCULATION WITH TRICYCLE DAY PASS CHECK
 function calculateTerminalFee() {
     const tripType = document.getElementById('type').value;
     const denomination = document.getElementById('denomination').value;
     const transportGroup = document.getElementById('transport-group').value;
+    const plateNumber = document.getElementById('plate-number').value.toUpperCase().trim();
     const feeSection = document.getElementById('fee-section');
     const feeAmountDisplay = document.getElementById('fee-amount-display');
     const feeAmountHidden = document.getElementById('terminal-fee-amount');
+    const feeWarning = document.getElementById('fee-warning');
     
-    // Only show fee section for DEPARTURES
     if (tripType === 'DEPARTURE' && denomination && transportGroup) {
-        // Get fee from structure
         let fee = 0;
         if (TERMINAL_FEES[denomination] && TERMINAL_FEES[denomination][transportGroup] !== undefined) {
             fee = TERMINAL_FEES[denomination][transportGroup];
         }
         
-        // Display fee
-        feeAmountDisplay.textContent = `₱${fee.toFixed(2)}`;
+        // TRICYCLE DAY PASS CHECK
+        if (denomination === 'TRICYCLE' && plateNumber) {
+            const paidInfo = isTricyclePaidToday(plateNumber);
+            if (paidInfo) {
+                // Already paid today!
+                fee = 0;
+                feeAmountDisplay.textContent = '₱0.00 (Day Pass Paid)';
+                feeWarning.innerHTML = `
+                    <div style="background: #fef3c7; color: #92400e; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 14px;">
+                        ✅ Day pass already paid at ${paidInfo.time}<br>
+                        Receipt: ${paidInfo.receipt}
+                    </div>
+                `;
+                
+                // Auto-fill payment info
+                document.getElementById('payment-method').value = 'Cash';
+                document.getElementById('payment-status').value = 'Paid';
+                document.getElementById('receipt-number').value = paidInfo.receipt;
+                document.getElementById('fee-notes').value = `Day pass paid at ${paidInfo.time}`;
+                
+                // Make fields readonly
+                document.getElementById('payment-method').disabled = true;
+                document.getElementById('payment-status').disabled = true;
+                document.getElementById('receipt-number').disabled = true;
+            } else {
+                // First trip - charge ₱10
+                feeAmountDisplay.textContent = `₱${fee.toFixed(2)}`;
+                feeWarning.innerHTML = `
+                    <div style="background: #dbeafe; color: #1e40af; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 14px;">
+                        ℹ️ First trip today - Day pass fee applies
+                    </div>
+                `;
+                
+                // Enable fields
+                document.getElementById('payment-method').disabled = false;
+                document.getElementById('payment-status').disabled = false;
+                document.getElementById('receipt-number').disabled = false;
+            }
+        } else {
+            // Not a tricycle
+            feeAmountDisplay.textContent = `₱${fee.toFixed(2)}`;
+            feeWarning.innerHTML = '';
+            
+            // Enable fields
+            document.getElementById('payment-method').disabled = false;
+            document.getElementById('payment-status').disabled = false;
+            document.getElementById('receipt-number').disabled = false;
+        }
+        
         feeAmountHidden.value = fee;
         feeSection.classList.remove('hidden');
-        
-        // Make payment fields required
         document.getElementById('payment-method').required = true;
         document.getElementById('payment-status').required = true;
     } else {
-        // Hide fee section for arrivals
         feeSection.classList.add('hidden');
         feeAmountHidden.value = 0;
-        
-        // Make payment fields optional
+        feeWarning.innerHTML = '';
         document.getElementById('payment-method').required = false;
         document.getElementById('payment-status').required = false;
     }
@@ -228,20 +339,16 @@ const destinationSelect = document.getElementById('destination');
 typeSelect.addEventListener('change', function() {
     const type = this.value;
     const denomination = denominationSelect.value;
-    
-    // Determine which locations to use
     const isTricycle = denomination === 'TRICYCLE';
     const locations = isTricycle ? intraMunicipalLocations : interMunicipalLocations;
     
     if (type === 'ARRIVAL') {
-        // Show ORIGIN only (where did it come from?)
         originGroup.classList.remove('hidden');
         destinationGroup.classList.add('hidden');
         originSelect.required = true;
         destinationSelect.required = false;
         destinationSelect.value = '';
         
-        // Populate origin dropdown
         originSelect.innerHTML = '<option value="">Select Origin</option>';
         locations.forEach(loc => {
             const option = document.createElement('option');
@@ -249,16 +356,13 @@ typeSelect.addEventListener('change', function() {
             option.textContent = loc;
             originSelect.appendChild(option);
         });
-        
     } else if (type === 'DEPARTURE') {
-        // Show DESTINATION only (where is it going?)
         originGroup.classList.add('hidden');
         destinationGroup.classList.remove('hidden');
         originSelect.required = false;
         destinationSelect.required = true;
         originSelect.value = '';
         
-        // Populate destination dropdown
         destinationSelect.innerHTML = '<option value="">Select Destination</option>';
         locations.forEach(loc => {
             const option = document.createElement('option');
@@ -266,36 +370,30 @@ typeSelect.addEventListener('change', function() {
             option.textContent = loc;
             destinationSelect.appendChild(option);
         });
-        
     } else {
-        // Hide both if no type selected
         originGroup.classList.add('hidden');
         destinationGroup.classList.add('hidden');
         originSelect.required = false;
         destinationSelect.required = false;
     }
     
-    // Calculate fee when type changes
     calculateTerminalFee();
 });
 
-// FIXED PASSENGER COUNTING
+// PASSENGER COUNTING
 const passengerInputs = document.querySelectorAll('.passenger-count');
 
 function calculateTotals() {
-    // Adult totals
     const adultMale = parseInt(document.getElementById('adult-male').value) || 0;
     const adultFemale = parseInt(document.getElementById('adult-female').value) || 0;
     const adultTotal = adultMale + adultFemale;
     document.getElementById('adult-total').value = adultTotal;
     
-    // Child totals
     const childMale = parseInt(document.getElementById('child-male').value) || 0;
     const childFemale = parseInt(document.getElementById('child-female').value) || 0;
     const childTotal = childMale + childFemale;
     document.getElementById('child-total').value = childTotal;
     
-    // GRAND TOTAL = Adults + Children
     const grandTotal = adultTotal + childTotal;
     document.getElementById('total-passengers').textContent = `Total Passengers: ${grandTotal}`;
 }
@@ -304,7 +402,7 @@ passengerInputs.forEach(input => {
     input.addEventListener('input', calculateTotals);
 });
 
-// Set default date and time
+// Set defaults
 document.getElementById('trip-date').valueAsDate = new Date();
 const now = new Date();
 document.getElementById('trip-time').value = now.toTimeString().slice(0, 5);
@@ -313,11 +411,11 @@ document.getElementById('trip-time').value = now.toTimeString().slice(0, 5);
 function generateReceiptNumber() {
     const date = new Date();
     const year = date.getFullYear();
-    const timestamp = date.getTime().toString().slice(-4); // Last 4 digits of timestamp
+    const timestamp = date.getTime().toString().slice(-4);
     return `TF-${year}-${timestamp}`;
 }
 
-// Form submission - V4.0 WITH TERMINAL FEE
+// FORM SUBMISSION - V4.1 WITH PHOTO CAPTURE
 document.getElementById('passenger-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -329,8 +427,10 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
     submitBtn.textContent = '⏳ Submitting...';
     statusMessage.style.display = 'none';
     
-    // Determine origin/destination based on type
     const type = document.getElementById('type').value;
+    const denomination = document.getElementById('denomination').value;
+    const plateNumber = document.getElementById('plate-number').value.toUpperCase().trim();
+    
     let origin = '';
     let destination = '';
     
@@ -342,7 +442,7 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
         destination = document.getElementById('destination').value;
     }
     
-    // Get all passenger values
+    // Get passenger values
     const adultMale = parseInt(document.getElementById('adult-male').value) || 0;
     const adultFemale = parseInt(document.getElementById('adult-female').value) || 0;
     const childMale = parseInt(document.getElementById('child-male').value) || 0;
@@ -362,12 +462,12 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
     const totalFemales = adultFemale + childFemale;
     const totalPassengers = adultTotal + childTotal;
     
-    // Get terminal fee values
+    // Get fee values
     const terminalFee = document.getElementById('terminal-fee-amount').value || 0;
     const paymentMethod = document.getElementById('payment-method').value || '';
     const paymentStatus = document.getElementById('payment-status').value || '';
     let receiptNumber = document.getElementById('receipt-number').value.trim();
-    const feeNotes = document.getElementById('fee-notes').value.trim();
+    let feeNotes = document.getElementById('fee-notes').value.trim();
     
     // Auto-generate receipt if paid and no receipt entered
     if (type === 'DEPARTURE' && paymentStatus === 'Paid' && !receiptNumber) {
@@ -375,38 +475,30 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
         document.getElementById('receipt-number').value = receiptNumber;
     }
     
-    // Build URL with parameters
+    // Add photo info to notes if captured
+    if (arkabalaPhotoData) {
+        feeNotes += (feeNotes ? ' | ' : '') + 'Arkabala photo captured';
+    }
+    
+    // Build URL
     const params = new URLSearchParams({
         tripDate: document.getElementById('trip-date').value,
         tripTime: document.getElementById('trip-time').value,
         type: type,
-        denomination: document.getElementById('denomination').value,
+        denomination: denomination,
         transportGroup: document.getElementById('transport-group').value,
         origin: origin,
         destination: destination,
-        plateNumber: document.getElementById('plate-number').value,
-        adultMale: adultMale,
-        adultFemale: adultFemale,
-        adultTotal: adultTotal,
-        childMale: childMale,
-        childFemale: childFemale,
-        childTotal: childTotal,
-        seniorMale: seniorMale,
-        seniorFemale: seniorFemale,
-        seniorTotal: seniorTotal,
-        totalMales: totalMales,
-        totalFemales: totalFemales,
-        pwdMale: pwdMale,
-        pwdFemale: pwdFemale,
-        pwdTotal: pwdTotal,
-        pregnant: pregnant,
-        totalPassengers: totalPassengers,
+        plateNumber: plateNumber,
+        adultMale, adultFemale, adultTotal,
+        childMale, childFemale, childTotal,
+        seniorMale, seniorFemale, seniorTotal,
+        totalMales, totalFemales,
+        pwdMale, pwdFemale, pwdTotal,
+        pregnant, totalPassengers,
         username: user.username,
-        terminalFee: terminalFee,
-        paymentMethod: paymentMethod,
-        paymentStatus: paymentStatus,
-        receiptNumber: receiptNumber,
-        feeNotes: feeNotes
+        terminalFee, paymentMethod, paymentStatus,
+        receiptNumber, feeNotes
     });
     
     try {
@@ -419,12 +511,24 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
         const result = await response.json();
         
         if (result.success) {
+            // MARK TRICYCLE AS PAID (if applicable)
+            if (denomination === 'TRICYCLE' && type === 'DEPARTURE' && 
+                paymentStatus === 'Paid' && parseFloat(terminalFee) > 0) {
+                markTricyclePaidToday(plateNumber, receiptNumber);
+            }
+            
+            // TODO: Upload Arkabala photo to Google Drive (future enhancement)
+            // For now, photo is captured but not stored remotely
+            
             let successMsg = '✅ Data submitted successfully!';
             if (type === 'DEPARTURE' && terminalFee > 0) {
                 successMsg += `\n💰 Fee: ₱${terminalFee}`;
                 if (receiptNumber) {
                     successMsg += `\n📄 Receipt: ${receiptNumber}`;
                 }
+            }
+            if (arkabalaPhotoData) {
+                successMsg += '\n📸 Arkabala photo captured';
             }
             
             statusMessage.textContent = successMsg;
@@ -439,24 +543,25 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
                 calculateTotals();
                 statusMessage.style.display = 'none';
                 
-                // Hide origin/destination and fee sections
                 originGroup.classList.add('hidden');
                 destinationGroup.classList.add('hidden');
                 document.getElementById('fee-section').classList.add('hidden');
+                document.getElementById('fee-warning').innerHTML = '';
                 
-                // Remove auto-filled classes
                 document.querySelectorAll('.auto-filled').forEach(el => {
                     el.classList.remove('auto-filled');
                 });
                 
-                // Reset transport group dropdown
                 transportGroupSelect.innerHTML = '<option value="">First select vehicle type</option>';
                 transportGroupSelect.disabled = true;
+                
+                // Clear photo
+                arkabalaPhotoData = null;
+                document.getElementById('arkabala-preview').innerHTML = '';
             }, 3000);
         } else {
             throw new Error(result.message || 'Submission failed');
         }
-        
     } catch (error) {
         statusMessage.textContent = '❌ Error submitting data. Please try again.';
         statusMessage.className = 'status-message status-error';
