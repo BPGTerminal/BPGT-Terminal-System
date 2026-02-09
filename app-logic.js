@@ -1,4 +1,5 @@
-// BPGT App Logic - V3.0 FIXED with QR Scanner
+// BPGT App Logic - V4.0 REVENUE EDITION
+// Now includes terminal fee collection per Municipal Ordinance 2026-01
 
 // Protect this page - require login
 requireLogin();
@@ -10,6 +11,35 @@ window.addEventListener('load', () => {
         document.getElementById('user-name').textContent = user.fullName;
     }
 });
+
+// TERMINAL FEE STRUCTURE - Per Municipal Ordinance 2026-01
+const TERMINAL_FEES = {
+    'BUS': {
+        'RORO': 60,          // Heavy bus
+        'CHERRY': 50         // Medium bus
+    },
+    'SHUTTLE VAN': {
+        'BARAKAH': 30,
+        'CENTRO': 30,
+        'PILANDOK': 30,
+        'RAYANN': 30,
+        'RECARO': 30,
+        'RIO TUBA EXP.': 30,
+        'RUNLEE': 30
+    },
+    'JEEP': {
+        'N/A': 15
+    },
+    'MULTICAB': {
+        'N/A': 10
+    },
+    'FILCAB': {
+        'N/A': 10
+    },
+    'TRICYCLE': {
+        'TODA': 10           // Per day pass
+    }
+};
 
 // Transport group mappings
 const transportGroups = {
@@ -117,6 +147,9 @@ plateNumberInput.addEventListener('blur', function() {
             const transportGroupSelect = document.getElementById('transport-group');
             transportGroupSelect.value = vehicleInfo.transportGroup;
             transportGroupSelect.classList.add('auto-filled');
+            
+            // Calculate terminal fee after vehicle info is filled
+            calculateTerminalFee();
         }, 100);
     }
 });
@@ -145,6 +178,45 @@ denominationSelect.addEventListener('change', function() {
     // Trigger type change to update location lists
     document.getElementById('type').dispatchEvent(new Event('change'));
 });
+
+// Calculate terminal fee when transport group changes
+transportGroupSelect.addEventListener('change', calculateTerminalFee);
+
+// TERMINAL FEE CALCULATION
+function calculateTerminalFee() {
+    const tripType = document.getElementById('type').value;
+    const denomination = document.getElementById('denomination').value;
+    const transportGroup = document.getElementById('transport-group').value;
+    const feeSection = document.getElementById('fee-section');
+    const feeAmountDisplay = document.getElementById('fee-amount-display');
+    const feeAmountHidden = document.getElementById('terminal-fee-amount');
+    
+    // Only show fee section for DEPARTURES
+    if (tripType === 'DEPARTURE' && denomination && transportGroup) {
+        // Get fee from structure
+        let fee = 0;
+        if (TERMINAL_FEES[denomination] && TERMINAL_FEES[denomination][transportGroup] !== undefined) {
+            fee = TERMINAL_FEES[denomination][transportGroup];
+        }
+        
+        // Display fee
+        feeAmountDisplay.textContent = `₱${fee.toFixed(2)}`;
+        feeAmountHidden.value = fee;
+        feeSection.classList.remove('hidden');
+        
+        // Make payment fields required
+        document.getElementById('payment-method').required = true;
+        document.getElementById('payment-status').required = true;
+    } else {
+        // Hide fee section for arrivals
+        feeSection.classList.add('hidden');
+        feeAmountHidden.value = 0;
+        
+        // Make payment fields optional
+        document.getElementById('payment-method').required = false;
+        document.getElementById('payment-status').required = false;
+    }
+}
 
 // SMART ORIGIN/DESTINATION LOGIC
 const typeSelect = document.getElementById('type');
@@ -202,6 +274,9 @@ typeSelect.addEventListener('change', function() {
         originSelect.required = false;
         destinationSelect.required = false;
     }
+    
+    // Calculate fee when type changes
+    calculateTerminalFee();
 });
 
 // FIXED PASSENGER COUNTING
@@ -234,7 +309,15 @@ document.getElementById('trip-date').valueAsDate = new Date();
 const now = new Date();
 document.getElementById('trip-time').value = now.toTimeString().slice(0, 5);
 
-// Form submission - FIXED TO USE GET REQUEST
+// AUTO-GENERATE RECEIPT NUMBER
+function generateReceiptNumber() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const timestamp = date.getTime().toString().slice(-4); // Last 4 digits of timestamp
+    return `TF-${year}-${timestamp}`;
+}
+
+// Form submission - V4.0 WITH TERMINAL FEE
 document.getElementById('passenger-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -259,7 +342,7 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
         destination = document.getElementById('destination').value;
     }
     
-    // Get all values
+    // Get all passenger values
     const adultMale = parseInt(document.getElementById('adult-male').value) || 0;
     const adultFemale = parseInt(document.getElementById('adult-female').value) || 0;
     const childMale = parseInt(document.getElementById('child-male').value) || 0;
@@ -277,7 +360,20 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
     const pwdTotal = pwdMale + pwdFemale;
     const totalMales = adultMale + childMale;
     const totalFemales = adultFemale + childFemale;
-    const totalPassengers = adultTotal + childTotal; // FIXED: Only adults + children
+    const totalPassengers = adultTotal + childTotal;
+    
+    // Get terminal fee values
+    const terminalFee = document.getElementById('terminal-fee-amount').value || 0;
+    const paymentMethod = document.getElementById('payment-method').value || '';
+    const paymentStatus = document.getElementById('payment-status').value || '';
+    let receiptNumber = document.getElementById('receipt-number').value.trim();
+    const feeNotes = document.getElementById('fee-notes').value.trim();
+    
+    // Auto-generate receipt if paid and no receipt entered
+    if (type === 'DEPARTURE' && paymentStatus === 'Paid' && !receiptNumber) {
+        receiptNumber = generateReceiptNumber();
+        document.getElementById('receipt-number').value = receiptNumber;
+    }
     
     // Build URL with parameters
     const params = new URLSearchParams({
@@ -305,7 +401,12 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
         pwdTotal: pwdTotal,
         pregnant: pregnant,
         totalPassengers: totalPassengers,
-        username: user.username
+        username: user.username,
+        terminalFee: terminalFee,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus,
+        receiptNumber: receiptNumber,
+        feeNotes: feeNotes
     });
     
     try {
@@ -318,7 +419,15 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
         const result = await response.json();
         
         if (result.success) {
-            statusMessage.textContent = '✅ Data submitted successfully!';
+            let successMsg = '✅ Data submitted successfully!';
+            if (type === 'DEPARTURE' && terminalFee > 0) {
+                successMsg += `\n💰 Fee: ₱${terminalFee}`;
+                if (receiptNumber) {
+                    successMsg += `\n📄 Receipt: ${receiptNumber}`;
+                }
+            }
+            
+            statusMessage.textContent = successMsg;
             statusMessage.className = 'status-message status-success';
             statusMessage.style.display = 'block';
             
@@ -330,9 +439,10 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
                 calculateTotals();
                 statusMessage.style.display = 'none';
                 
-                // Hide origin/destination fields
+                // Hide origin/destination and fee sections
                 originGroup.classList.add('hidden');
                 destinationGroup.classList.add('hidden');
+                document.getElementById('fee-section').classList.add('hidden');
                 
                 // Remove auto-filled classes
                 document.querySelectorAll('.auto-filled').forEach(el => {
@@ -342,7 +452,7 @@ document.getElementById('passenger-form').addEventListener('submit', async (e) =
                 // Reset transport group dropdown
                 transportGroupSelect.innerHTML = '<option value="">First select vehicle type</option>';
                 transportGroupSelect.disabled = true;
-            }, 2000);
+            }, 3000);
         } else {
             throw new Error(result.message || 'Submission failed');
         }
