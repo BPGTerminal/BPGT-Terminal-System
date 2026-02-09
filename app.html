@@ -485,6 +485,52 @@
                     <input type="text" id="fee-notes" placeholder="e.g., Special pass reason">
                 </div>
             </div>
+                <div class="form-group">
+                    <label>Arkabala Photo (Optional)</label>
+                    <button type="button" onclick="captureArkabalaPhoto()" style="
+                        width: 100%;
+                        padding: 12px;
+                        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    ">
+                        📸 Capture Arkabala Photo
+                    </button>
+                    <div id="arkabala-preview"></div>
+                    <small style="color: #64748b; font-size: 12px; display: block; margin-top: 4px;">
+                        Take a photo of the physical cash ticket for records
+                    </small>
+                </div>
+
+                <!-- Warning/Info Message Area -->
+                <div id="fee-warning"></div>
+
+<!-- END ARKABALA PHOTO SECTION -->
+
+
+<!-- ALSO UPDATE THE EXISTING FEE AMOUNT DISPLAY TO INCLUDE WARNING DIV -->
+<!-- Replace the fee amount div with this: -->
+
+                <!-- Fee Amount Display (Auto-calculated) -->
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+                            color: white; 
+                            padding: 16px; 
+                            border-radius: 12px; 
+                            text-align: center; 
+                            margin-bottom: 16px;
+                            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Terminal Fee</div>
+                    <div style="font-size: 32px; font-weight: 700;" id="fee-amount-display">₱0.00</div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Per Municipal Ordinance 2026-01</div>
+                </div>
+
+                <!-- Hidden field to store fee amount -->
+                <input type="hidden" id="terminal-fee-amount" value="0">
 
 <!-- END TERMINAL FEE SECTION -->
 
