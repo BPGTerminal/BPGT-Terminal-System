@@ -259,7 +259,16 @@
                 <div class="form-group">
                     <label for="plate-number">Plate Number *</label>
                     <input type="text" id="plate-number" required placeholder="e.g., ABC 1234" style="text-transform: uppercase;">
+                    ```html
+                    <input type="text" id="plate-number" required 
+                           placeholder="e.g., ABC 1234" 
+                           style="text-transform: uppercase;">
                     
+                    <!-- QR Scanner Button (already there) -->
+                    
+                    <!-- NEW: Vehicle Status Messages -->
+                    <div id="vehicle-status"></div>
+```
                     <!-- QR Scanner Button -->
                     <button type="button" id="qr-scan-btn" style="
                         margin-top: 8px;
