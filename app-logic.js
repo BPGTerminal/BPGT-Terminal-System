@@ -123,6 +123,12 @@ function addVehicleToRegistry(plateNumber, denomination, transportGroup) {
 
 // LOAD CUSTOM VEHICLES ON STARTUP
 function loadCustomVehicles() {
+    ```javascript
+loadVehicles();
+loadCustomVehicles();  // ← ADD THIS LINE
+```
+
+---
     const customVehicles = JSON.parse(localStorage.getItem('bpgt_custom_vehicles') || '{}');
     Object.assign(vehicleRegistry, customVehicles);
     console.log('✅ Loaded custom vehicles:', Object.keys(customVehicles).length);
