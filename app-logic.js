@@ -1,6 +1,7 @@
-// BPGT TERMINAL SYSTEM - V4.3 COMPLETE
-// All features: Tricycle day pass, Photo capture, Freelance vans, QR scanner
-// Emergency fix: Date/Time initialization
+// BPGT TERMINAL SYSTEM - V4.4 FINAL PRODUCTION
+// All features: Tricycle day pass, Photo capture + GPS, Freelance vans, QR scanner
+// Production ready for Mayor presentation
+// Last updated: February 10, 2026
 
 // ==================== AUTHENTICATION ====================
 requireLogin();
@@ -209,19 +210,51 @@ function captureArkabalaPhoto() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment';
+    input.capture = 'environment'; // Force camera
     
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Try to get geolocation
+            let geoData = null;
+            if (navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            timeout: 5000,
+                            enableHighAccuracy: true
+                        });
+                    });
+                    
+                    geoData = {
+                        lat: position.coords.latitude,
+                        lon: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    console.log('📍 GPS captured:', geoData);
+                } catch (error) {
+                    console.log('⚠️ GPS unavailable:', error.message);
+                }
+            }
+            
             const reader = new FileReader();
             reader.onload = (event) => {
-                arkabalaPhotoData = event.target.result;
+                arkabalaPhotoData = {
+                    image: event.target.result,
+                    geo: geoData,
+                    filename: file.name,
+                    timestamp: new Date().toISOString()
+                };
                 
                 const preview = document.getElementById('arkabala-preview');
                 if (preview) {
                     preview.innerHTML = `
-                        <img src="${arkabalaPhotoData}" style="max-width: 100%; border-radius: 8px; margin-top: 8px;">
+                        <img src="${event.target.result}" style="max-width: 100%; border-radius: 8px; margin-top: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        ${geoData ? `<div style="font-size: 11px; color: #059669; margin-top: 6px; background: #d1fae5; padding: 6px; border-radius: 4px;">
+                            📍 GPS: ${geoData.lat.toFixed(6)}, ${geoData.lon.toFixed(6)} (±${Math.round(geoData.accuracy)}m)
+                        </div>` : '<div style="font-size: 11px; color: #92400e; margin-top: 6px; background: #fef3c7; padding: 6px; border-radius: 4px;">⚠️ GPS not captured</div>'}
                         <button type="button" onclick="removeArkabalaPhoto()" style="
                             margin-top: 8px;
                             padding: 6px 12px;
@@ -234,7 +267,7 @@ function captureArkabalaPhoto() {
                         ">❌ Remove Photo</button>
                     `;
                     
-                    alert('✅ Arkabala photo captured!');
+                    alert(geoData ? '✅ Photo + GPS captured!' : '✅ Photo captured (GPS unavailable)');
                 }
             };
             reader.readAsDataURL(file);
