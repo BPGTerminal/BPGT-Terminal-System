@@ -50,6 +50,16 @@ function isTricyclePaidToday(plateNumber) {
     const paidList = JSON.parse(localStorage.getItem('bpgt_tricycle_paid') || '{}');
     return paidList[plateNumber.toUpperCase()] || null;
 }
+```javascript
+const transportGroups = {
+    'BUS': ['RORO', 'CHERRY'],
+    'SHUTTLE VAN': ['BARAKAH', 'CENTRO', 'PILANDOK', 'RAYANN', 'RECARO', 
+                    'RIO TUBA EXP.', 'RUNLEE', 'FREELANCE'],  // ← ADD THIS
+    'TRICYCLE': ['TODA'],
+    'JEEP': ['N/A'],
+    'MULTICAB': ['N/A'],
+    'FILCAB': ['N/A']
+};
 
 // TERMINAL FEE STRUCTURE - Per Municipal Ordinance 2026-01
 const TERMINAL_FEES = {
@@ -89,6 +99,34 @@ const transportGroups = {
     'MULTICAB': ['N/A'],
     'FILCAB': ['N/A']
 };
+```javascript
+// AUTO-ADD NEW VEHICLES TO REGISTRY
+function addVehicleToRegistry(plateNumber, denomination, transportGroup) {
+    // Add to local registry
+    vehicleRegistry[plateNumber.toUpperCase()] = {
+        denomination: denomination,
+        transportGroup: transportGroup
+    };
+    
+    // Save to localStorage for persistence
+    const customVehicles = JSON.parse(localStorage.getItem('bpgt_custom_vehicles') || '{}');
+    customVehicles[plateNumber.toUpperCase()] = {
+        denomination: denomination,
+        transportGroup: transportGroup,
+        addedDate: new Date().toISOString(),
+        addedBy: getCurrentUser().username
+    };
+    localStorage.setItem('bpgt_custom_vehicles', JSON.stringify(customVehicles));
+    
+    console.log('✅ Vehicle added to registry:', plateNumber);
+}
+
+// LOAD CUSTOM VEHICLES ON STARTUP
+function loadCustomVehicles() {
+    const customVehicles = JSON.parse(localStorage.getItem('bpgt_custom_vehicles') || '{}');
+    Object.assign(vehicleRegistry, customVehicles);
+    console.log('✅ Loaded custom vehicles:', Object.keys(customVehicles).length);
+}
 
 // Location lists
 const interMunicipalLocations = [
@@ -115,7 +153,40 @@ async function loadVehicles() {
         console.error('Error loading vehicles:', error);
     }
 }
-
+```javascript
+plateNumberInput.addEventListener('blur', function() {
+    const plate = this.value.toUpperCase().trim();
+    const vehicleInfo = vehicleRegistry[plate];
+    
+    if (vehicleInfo) {
+        // FOUND in registry - auto-fill
+        const denominationSelect = document.getElementById('denomination');
+        denominationSelect.value = vehicleInfo.denomination;
+        denominationSelect.classList.add('auto-filled');
+        denominationSelect.dispatchEvent(new Event('change'));
+        
+        setTimeout(() => {
+            const transportGroupSelect = document.getElementById('transport-group');
+            transportGroupSelect.value = vehicleInfo.transportGroup;
+            transportGroupSelect.classList.add('auto-filled');
+            calculateTerminalFee();
+        }, 100);
+    } else {
+        // NOT FOUND - show info message
+        if (plate) {
+            const statusDiv = document.getElementById('vehicle-status');
+            if (statusDiv) {
+                statusDiv.innerHTML = `
+                    <div style="background: #fef3c7; color: #92400e; padding: 8px; 
+                                border-radius: 6px; font-size: 13px; margin-top: 8px;">
+                        ℹ️ New vehicle - Please select type and group. 
+                        Will be added to registry.
+                    </div>
+                `;
+            }
+        }
+    }
+});
 loadVehicles();
 
 // QR CODE SCANNER - FORCE BACK CAMERA
@@ -152,7 +223,37 @@ function onScanSuccess(decodedText, decodedResult) {
 function onScanFailure(error) {
     // Silent handling
 }
-
+```javascript
+transportGroupSelect.addEventListener('change', function() {
+    const plateNumber = document.getElementById('plate-number').value.toUpperCase().trim();
+    const denomination = document.getElementById('denomination').value;
+    const transportGroup = this.value;
+    
+    // If new vehicle and FREELANCE selected, add to registry
+    if (plateNumber && denomination && transportGroup && 
+        !vehicleRegistry[plateNumber]) {
+        
+        addVehicleToRegistry(plateNumber, denomination, transportGroup);
+        
+        // Show success message
+        const statusDiv = document.getElementById('vehicle-status');
+        if (statusDiv) {
+            statusDiv.innerHTML = `
+                <div style="background: #d1fae5; color: #065f46; padding: 8px; 
+                            border-radius: 6px; font-size: 13px; margin-top: 8px;">
+                    ✅ Vehicle added to registry! Next time it will auto-fill.
+                </div>
+            `;
+            
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+    }
+    
+    calculateTerminalFee();
+});
+```
 // ARKABALA PHOTO CAPTURE
 let arkabalaPhotoData = null;
 
