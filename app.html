@@ -235,6 +235,33 @@
        display: none !important;
    }
     </style>
+    ```html
+<!-- PWA MANIFEST - Makes app installable -->
+<link rel="manifest" href="manifest.json">
+
+<!-- iOS / Safari support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BPGT">
+<link rel="apple-touch-icon" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
+
+<!-- Android / Chrome theme color -->
+<meta name="theme-color" content="#1e3a8a">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- PWA SERVICE WORKER REGISTRATION -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/BPGT-Terminal-System/service-worker.js')
+        .then(reg => console.log('✅ BPGT PWA ready'))
+        .catch(err => console.log('Service worker failed:', err));
+    });
+  }
+</script>
+```
+
 </head>
 <body>
     <div class="container">
