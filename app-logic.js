@@ -1,404 +1,543 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BPGT Terminal System</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="BPGT">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#1e3a8a">
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body {
-            width: 100%; min-height: 100%;
-            background: #f1f5f9;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 15px; color: #1e293b;
-            overflow-x: hidden;
-        }
-        /* HEADER */
-        .app-header {
-            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
-            color: white; padding: 12px 16px;
-            display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .header-logo { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; }
-        .header-title { font-size: 13px; font-weight: 700; }
-        .header-sub   { font-size: 11px; opacity: 0.8; }
-        .header-right { text-align: right; }
-        .header-user  { font-size: 12px; opacity: 0.9; }
-        .logout-btn {
-            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35);
-            color: white; padding: 5px 12px; border-radius: 6px;
-            font-size: 12px; cursor: pointer; margin-top: 4px;
-        }
-        /* MAIN */
-        .main-content { max-width: 600px; margin: 0 auto; padding: 14px; }
-        /* SECTIONS */
-        .form-section {
-            background: white; border-radius: 12px; padding: 16px;
-            margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-        }
-        .section-title {
-            font-size: 12px; font-weight: 700; color: #1e3a8a;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            margin-bottom: 14px; padding-bottom: 8px;
-            border-bottom: 2px solid #eff6ff;
-        }
-        /* FORM */
-        .form-group { margin-bottom: 13px; }
-        .form-group label {
-            display: block; font-size: 11px; font-weight: 700;
-            color: #64748b; text-transform: uppercase;
-            letter-spacing: 0.3px; margin-bottom: 5px;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%; padding: 10px 12px;
-            border: 1.5px solid #e2e8f0; border-radius: 8px;
-            font-size: 15px; color: #1e293b; background: #f8fafc;
-            -webkit-appearance: none; transition: border-color 0.2s;
-        }
-        .form-group input:focus,
-        .form-group select:focus { outline: none; border-color: #3b82f6; background: white; }
-        .form-group textarea { resize: vertical; min-height: 56px; }
-        .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .total-bar {
-            background: #f0fdf4; border: 1.5px solid #059669;
-            border-radius: 8px; padding: 10px 14px;
-            font-weight: 700; color: #059669;
-            text-align: center; font-size: 16px; margin-top: 10px;
-        }
-        /* BUTTONS */
-        .btn {
-            width: 100%; padding: 12px; border: none; border-radius: 10px;
-            font-size: 15px; font-weight: 700; cursor: pointer;
-            text-align: center; transition: all 0.15s; margin-bottom: 8px;
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn-primary { background: #1e3a8a; color: white; }
-        .btn-success { background: #059669; color: white; }
-        .btn-blue    { background: #3b82f6; color: white; }
-        .btn-purple  { background: #7c3aed; color: white; }
-        .btn-sm {
-            width: auto; padding: 8px 14px; font-size: 13px;
-            border-radius: 8px; display: inline-block; margin: 4px 4px 0 0;
-        }
-        /* FEE */
-        .fee-section { display: none; }
-        .fee-section.visible { display: block; }
-        .fee-card {
-            background: linear-gradient(135deg,#f0fdf4,#dcfce7);
-            border: 2px solid #059669; border-radius: 12px;
-            padding: 14px; text-align: center; margin-bottom: 14px;
-        }
-        .fee-amount { font-size: 30px; font-weight: 800; color: #059669; }
-        .fee-label  { font-size: 12px; color: #64748b; margin-top: 2px; }
-        /* TICKET */
-        .ticket-section { display: none; }
-        .ticket-section.visible { display: block; }
-        .ticket-hint {
-            background: #fef3c7; border: 1.5px solid #f59e0b;
-            border-radius: 8px; padding: 10px 14px;
-            font-size: 13px; color: #92400e; margin-bottom: 12px;
-        }
-        .ticket-field {
-            background: #f8fafc; border: 1.5px solid #e2e8f0;
-            border-radius: 10px; padding: 12px; margin-bottom: 10px;
-        }
-        .ticket-label {
-            font-size: 12px; font-weight: 700; color: #1e3a8a;
-            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
-        }
-        .denom-badge {
-            color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;
-        }
-        .badge-10 { background: #1e3a8a; }
-        .badge-5  { background: #7c3aed; }
-        .ticket-row { display: flex; gap: 8px; align-items: center; }
-        .ticket-row input {
-            flex: 1; padding: 10px; border: 1.5px solid #e2e8f0;
-            border-radius: 8px; font-size: 18px; font-weight: 700;
-            letter-spacing: 2px; font-family: monospace; background: white;
-            color: #1e293b;
-        }
-        .ticket-result {
-            margin-top: 7px; font-size: 12px; color: #64748b;
-            background: white; border-radius: 6px; padding: 7px 10px;
-            border: 1px solid #e2e8f0; min-height: 22px;
-        }
-        .result-ok   { background: #f0fdf4; border-color: #059669; color: #065f46; }
-        .result-warn { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
-        .ticket-summary {
-            background: #eff6ff; border: 2px solid #1e3a8a;
-            border-radius: 10px; padding: 12px; margin-top: 10px;
-            font-size: 13px; color: #1e3a8a; display: none;
-        }
-        .ticket-summary.visible { display: block; }
-        /* CAMERA */
-        .camera-overlay {
-            display: none; position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%; background: black;
-            z-index: 9999; flex-direction: column;
-        }
-        .camera-overlay.visible { display: flex; }
-        #camera-video { width: 100%; flex: 1; object-fit: cover; }
-        .cam-controls {
-            background: #1e293b; padding: 20px;
-            display: flex; gap: 14px; justify-content: center; align-items: center;
-        }
-        .snap-btn {
-            background: white; border: none; border-radius: 50%;
-            width: 68px; height: 68px; font-size: 26px; cursor: pointer;
-        }
-        .close-cam {
-            background: #ef4444; color: white; border: none;
-            border-radius: 50%; width: 48px; height: 48px;
-            font-size: 20px; cursor: pointer;
-        }
-        /* STATUS */
-        .status-msg {
-            padding: 13px; border-radius: 10px; margin-bottom: 14px;
-            font-size: 14px; font-weight: 600; display: none;
-        }
-        .status-success { background: #d1fae5; color: #065f46; border: 1.5px solid #059669; }
-        .status-error   { background: #fee2e2; color: #991b1b; border: 1.5px solid #ef4444; }
-        /* INFO BOXES */
-        .info-box { border-radius: 8px; padding: 9px 13px; font-size: 13px; margin-top: 7px; }
-        .info-orange { background: #fff7ed; border-left: 4px solid #ea580c; color: #92400e; }
-        .info-yellow { background: #fef3c7; border-left: 4px solid #f59e0b; color: #92400e; }
-        .info-green  { background: #f0fdf4; border-left: 4px solid #059669; color: #065f46; }
-        /* UTILITIES */
-        .hidden { display: none !important; }
-        #qr-reader { display: none; border-radius: 10px; overflow: hidden; margin-top: 10px; }
-        #arkabala-preview img { width: 100%; border-radius: 10px; margin-top: 8px; }
-        @media (max-width: 360px) { .main-content { padding: 10px; } .fee-amount { font-size: 24px; } }
-    </style>
-</head>
-<body>
+// ============================================================
+// BPGT TERMINAL SYSTEM — app-logic.js — VERSION 4.5
+// TICKET EDITION — COMPLETE WORKING VERSION
+// ============================================================
 
-<!-- CAMERA OVERLAY -->
-<div class="camera-overlay" id="camera-overlay">
-    <video id="camera-video" autoplay playsinline></video>
-    <div class="cam-controls">
-        <button class="close-cam" onclick="closeCam()">✕</button>
-        <button class="snap-btn" onclick="snapPhoto()">📸</button>
-    </div>
-</div>
+requireLogin();
 
-<!-- HEADER -->
-<div class="app-header">
-    <div class="header-left">
-        <img src="logo.png" alt="BPGT" class="header-logo"
-             onerror="this.style.display='none'">
-        <div>
-            <div class="header-title">🚌 BPGT Terminal</div>
-            <div class="header-sub">Passenger & Revenue System v4.5</div>
+window.addEventListener('load', () => {
+    const user = getCurrentUser();
+    if (user) document.getElementById('user-name').textContent = user.fullName;
+    setDateTime();
+    resetTricycleIfNewDay();
+    loadVehicleRegistry();
+    preloadOCR();
+});
+
+// ── DATE & TIME ──
+function setDateTime() {
+    const now = new Date();
+    const d = document.getElementById('trip-date');
+    const t = document.getElementById('trip-time');
+    if (d) d.value = now.toISOString().split('T')[0];
+    if (t) t.value = now.toTimeString().slice(0,5);
+}
+
+// ── TRICYCLE DAY PASS ──
+function todayKey() { return new Date().toISOString().split('T')[0]; }
+function resetTricycleIfNewDay() {
+    if (localStorage.getItem('bpgt_tc_date') !== todayKey()) {
+        localStorage.removeItem('bpgt_tc_paid');
+        localStorage.setItem('bpgt_tc_date', todayKey());
+    }
+}
+function markTricyclePaid(plate, receipt) {
+    const paid = JSON.parse(localStorage.getItem('bpgt_tc_paid') || '{}');
+    paid[plate.toUpperCase()] = {
+        receipt,
+        time: new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'})
+    };
+    localStorage.setItem('bpgt_tc_paid', JSON.stringify(paid));
+}
+function getTricyclePaid(plate) {
+    return JSON.parse(localStorage.getItem('bpgt_tc_paid') || '{}')[plate.toUpperCase()] || null;
+}
+
+// ── FEES ──
+const FEES = { 'BUS':60, 'SHUTTLE VAN':30, 'JEEP':15, 'MULTICAB':10, 'FILCAB':10, 'TRICYCLE':10 };
+const GROUPS = {
+    'BUS':         ['RORO','CHERRY'],
+    'SHUTTLE VAN': ['BARAKAH','CENTRO','PILANDOK','RAYANN','RECARO','RIO TUBA EXP.','RUNLEE','FREELANCE'],
+    'TRICYCLE':    ['TODA'],
+    'JEEP':        ['N/A'], 'MULTICAB':['N/A'], 'FILCAB':['N/A']
+};
+const INTER = ["BROOKE'S POINT","PPC","ABORLAN","NARRA","S.ESPAÑOLA","QUEZON","BATARAZA","RIO-TUBA","BULILUYAN","SICUD","RIZAL"];
+const INTRA = ['POBLACION','TUBTUB','PSU','MAINIT','IMULNOD','PANGOBILIAN'];
+
+// ── VEHICLE REGISTRY ──
+let registry = {};
+async function loadVehicleRegistry() {
+    try {
+        const res = await fetch(CONFIG.VEHICLE_API_URL);
+        const data = await res.json();
+        if (data.success) registry = {...data.vehicles};
+    } catch(e) {}
+    const custom = JSON.parse(localStorage.getItem('bpgt_custom_vehicles') || '{}');
+    Object.assign(registry, custom);
+}
+function saveNewVehicle(plate, denomination, group) {
+    const entry = { denomination, transportGroup: group, addedDate: new Date().toISOString(), addedBy: getCurrentUser().username };
+    registry[plate] = entry;
+    const custom = JSON.parse(localStorage.getItem('bpgt_custom_vehicles') || '{}');
+    custom[plate] = entry;
+    localStorage.setItem('bpgt_custom_vehicles', JSON.stringify(custom));
+}
+
+// ── PLATE NUMBER ──
+document.getElementById('plate-number').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+document.getElementById('plate-number').addEventListener('blur', function() {
+    const plate = this.value.toUpperCase().trim();
+    if (!plate) return;
+    const info = registry[plate];
+    if (info) {
+        document.getElementById('denomination').value = info.denomination;
+        document.getElementById('denomination').dispatchEvent(new Event('change'));
+        setTimeout(() => {
+            document.getElementById('transport-group').value = info.transportGroup;
+            recalcFee();
+        }, 150);
+        setVehicleStatus('', '');
+    } else {
+        setVehicleStatus('ℹ️ New vehicle — select type below', 'yellow');
+    }
+});
+
+function setVehicleStatus(msg, type) {
+    const el = document.getElementById('vehicle-status');
+    if (!el) return;
+    if (!msg) { el.innerHTML = ''; return; }
+    const s = { green:'background:#d1fae5;color:#065f46;border-left:4px solid #059669;',
+                yellow:'background:#fef3c7;color:#92400e;border-left:4px solid #f59e0b;',
+                red:'background:#fee2e2;color:#991b1b;border-left:4px solid #ef4444;' };
+    el.innerHTML = `<div style="${s[type]||s.yellow}padding:8px 12px;border-radius:6px;font-size:13px;margin-top:6px;">${msg}</div>`;
+    if (type !== 'red') setTimeout(() => el.innerHTML = '', 4000);
+}
+
+// ── DENOMINATION DROPDOWN ──
+document.getElementById('denomination').addEventListener('change', function() {
+    const denom = this.value;
+    const tg = document.getElementById('transport-group');
+    tg.innerHTML = '<option value="">Select Transport Group</option>';
+    if (denom && GROUPS[denom]) {
+        GROUPS[denom].forEach(g => { const o = document.createElement('option'); o.value = o.textContent = g; tg.appendChild(o); });
+        tg.disabled = false;
+    } else { tg.disabled = true; }
+    recalcFee();
+});
+
+document.getElementById('transport-group').addEventListener('change', function() {
+    const plate = document.getElementById('plate-number').value.toUpperCase().trim();
+    const denom = document.getElementById('denomination').value;
+    const group = this.value;
+    if (plate && denom && group && !registry[plate]) {
+        saveNewVehicle(plate, denom, group);
+        setVehicleStatus('✅ New vehicle saved!', 'green');
+    }
+    recalcFee();
+});
+
+// ── TYPE / ORIGIN / DESTINATION ──
+document.getElementById('type').addEventListener('change', function() {
+    const type  = this.value;
+    const denom = document.getElementById('denomination').value;
+    const locs  = denom === 'TRICYCLE' ? INTRA : INTER;
+    const og = document.getElementById('origin-group');
+    const dg = document.getElementById('destination-group');
+    const os = document.getElementById('origin');
+    const ds = document.getElementById('destination');
+    const fill = (sel, label) => {
+        sel.innerHTML = `<option value="">Select ${label}</option>`;
+        locs.forEach(l => { const o = document.createElement('option'); o.value = o.textContent = l; sel.appendChild(o); });
+    };
+    if (type === 'ARRIVAL') {
+        og.classList.remove('hidden'); dg.classList.add('hidden');
+        fill(os, 'Origin'); os.required = true; ds.required = false; ds.value = '';
+    } else if (type === 'DEPARTURE') {
+        dg.classList.remove('hidden'); og.classList.add('hidden');
+        fill(ds, 'Destination'); ds.required = true; os.required = false; os.value = '';
+    } else {
+        og.classList.add('hidden'); dg.classList.add('hidden');
+    }
+    recalcFee();
+});
+
+// ── FEE CALCULATION ──
+function recalcFee() {
+    const type  = document.getElementById('type').value;
+    const denom = document.getElementById('denomination').value;
+    const plate = document.getElementById('plate-number').value.toUpperCase().trim();
+    const feeEl = document.getElementById('fee-section');
+    const dispEl= document.getElementById('fee-amount-display');
+    const hidEl = document.getElementById('terminal-fee-amount');
+    const warnEl= document.getElementById('fee-warning');
+    const tickEl= document.getElementById('ticket-section');
+
+    if (type !== 'DEPARTURE' || !denom) {
+        feeEl.classList.remove('visible');
+        if (tickEl) tickEl.classList.remove('visible');
+        hidEl.value = 0;
+        if (warnEl) warnEl.innerHTML = '';
+        return;
+    }
+    let fee = FEES[denom] || 0;
+
+    // Tricycle day pass
+    if (denom === 'TRICYCLE' && plate) {
+        const paid = getTricyclePaid(plate);
+        if (paid) {
+            fee = 0;
+            if (warnEl) warnEl.innerHTML = `<div class="info-box info-yellow">✅ Day pass paid at ${paid.time} — Receipt: ${paid.receipt}</div>`;
+            dispEl.textContent = '₱0.00';
+            hidEl.value = 0;
+            feeEl.classList.add('visible');
+            if (tickEl) tickEl.classList.remove('visible');
+            setPaymentFields('Cash','Paid',`Day pass paid at ${paid.time}`);
+            return;
+        }
+    }
+
+    if (warnEl) {
+        warnEl.innerHTML = denom === 'BUS'
+            ? '<div class="info-box info-orange">🚌 All buses: ₱60.00 flat — Ordinance 2026-01</div>'
+            : '';
+    }
+
+    dispEl.textContent = `₱${fee.toFixed(2)}`;
+    hidEl.value = fee;
+    feeEl.classList.add('visible');
+
+    if (tickEl && fee > 0) {
+        tickEl.classList.add('visible');
+        updateTicketHint(fee);
+        clearTickets();
+    } else if (tickEl) {
+        tickEl.classList.remove('visible');
+    }
+}
+
+function setPaymentFields(method, status, notes) {
+    ['payment-method','payment-status','fee-notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'payment-method') el.value = method;
+        if (id === 'payment-status') el.value = status;
+        if (id === 'fee-notes') el.value = notes;
+        el.disabled = true;
+    });
+}
+
+// ── PASSENGER COUNT ──
+// Works with class "pax" in new app.html
+document.querySelectorAll('.pax').forEach(inp => {
+    inp.addEventListener('input', updatePassengerTotal);
+});
+function updatePassengerTotal() {
+    const am = +document.getElementById('adult-male').value   || 0;
+    const af = +document.getElementById('adult-female').value || 0;
+    const cm = +document.getElementById('child-male').value   || 0;
+    const cf = +document.getElementById('child-female').value || 0;
+    document.getElementById('adult-total').value = am + af;
+    document.getElementById('child-total').value = cm + cf;
+    const total = am + af + cm + cf;
+    const el = document.getElementById('total-passengers');
+    if (el) el.textContent = `Total Passengers: ${total}`;
+}
+
+// ── TICKET SYSTEM ──
+function updateTicketHint(fee) {
+    const el = document.getElementById('ticket-hint');
+    if (!el) return;
+    const w10 = fee % 10 === 0 ? `${fee/10} × ₱10` : `${Math.floor(fee/10)} × ₱10 + ${(fee%10)/5} × ₱5`;
+    el.textContent = `For ₱${fee}: Use ${w10}   OR all ₱5: ${fee/5} × ₱5 tickets`;
+}
+
+function clearTickets() {
+    ['serial-start-10','serial-start-5'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    ['result-10','result-5'].forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = ''; el.className = 'ticket-result'; } });
+    const sum = document.getElementById('ticket-summary');
+    if (sum) { sum.innerHTML = ''; sum.classList.remove('visible'); }
+    ['ticket-record-10','ticket-record-5'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+}
+
+function recalcTickets() {
+    const fee = parseFloat(document.getElementById('terminal-fee-amount').value) || 0;
+    if (fee <= 0) return;
+    const s10 = parseInt(document.getElementById('serial-start-10').value) || 0;
+    const s5  = parseInt(document.getElementById('serial-start-5').value)  || 0;
+    const r10 = document.getElementById('result-10');
+    const r5  = document.getElementById('result-5');
+    const sum = document.getElementById('ticket-summary');
+    const rec10 = document.getElementById('ticket-record-10');
+    const rec5  = document.getElementById('ticket-record-5');
+
+    // Clear previous
+    if (r10) { r10.textContent = ''; r10.className = 'ticket-result'; }
+    if (r5)  { r5.textContent  = ''; r5.className  = 'ticket-result'; }
+    if (sum) { sum.innerHTML = ''; sum.classList.remove('visible'); }
+    if (rec10) rec10.value = '';
+    if (rec5)  rec5.value  = '';
+
+    let record10 = '', record5 = '', valid = false;
+
+    if (s5 > 0 && s10 === 0) {
+        // ALL ₱5
+        const qty5 = fee / 5;
+        if (!Number.isInteger(qty5)) {
+            if (r5) { r5.textContent = `⚠️ ₱${fee} cannot use ₱5 tickets only.`; r5.className = 'ticket-result result-warn'; }
+            return;
+        }
+        const end5 = s5 + qty5 - 1;
+        record5 = `5-${String(s5).padStart(6,'0')}:${String(end5).padStart(6,'0')}`;
+        if (r5) { r5.textContent = `${qty5} ticket${qty5>1?'s':''} · end serial: ${String(end5).padStart(6,'0')} · ₱${fee} ✅`; r5.className = 'ticket-result result-ok'; }
+        valid = true;
+
+    } else if (s10 > 0 && s5 === 0) {
+        if (fee % 10 !== 0) {
+            // Needs ₱5 too
+            const qty10 = Math.floor(fee / 10);
+            const end10 = s10 + qty10 - 1;
+            record10 = `10-${String(s10).padStart(6,'0')}:${String(end10).padStart(6,'0')}`;
+            if (r10) { r10.textContent = `${qty10} ticket${qty10>1?'s':''} · end: ${String(end10).padStart(6,'0')} · covers ₱${qty10*10} — also enter ₱5 serial below for ₱${fee%10}`; r10.className = 'ticket-result result-warn'; }
+        } else {
+            const qty10 = fee / 10;
+            const end10 = s10 + qty10 - 1;
+            record10 = `10-${String(s10).padStart(6,'0')}:${String(end10).padStart(6,'0')}`;
+            if (r10) { r10.textContent = `${qty10} ticket${qty10>1?'s':''} · end serial: ${String(end10).padStart(6,'0')} · ₱${fee} ✅`; r10.className = 'ticket-result result-ok'; }
+            valid = true;
+        }
+
+    } else if (s10 > 0 && s5 > 0) {
+        // MIXED
+        const qty10 = Math.floor(fee / 10);
+        const rem   = fee % 10;
+        const qty5  = rem > 0 ? rem / 5 : 0;
+        const end10 = s10 + qty10 - 1;
+        record10 = `10-${String(s10).padStart(6,'0')}:${String(end10).padStart(6,'0')}`;
+        if (r10) { r10.textContent = `${qty10} ticket${qty10>1?'s':''} · end: ${String(end10).padStart(6,'0')} · ₱${qty10*10}`; r10.className = 'ticket-result result-ok'; }
+        if (qty5 > 0) {
+            const end5 = s5 + qty5 - 1;
+            record5 = `5-${String(s5).padStart(6,'0')}:${String(end5).padStart(6,'0')}`;
+            if (r5) { r5.textContent = `${qty5} ticket · end: ${String(end5).padStart(6,'0')} · ₱${qty5*5}`; r5.className = 'ticket-result result-ok'; }
+        }
+        valid = (qty10*10 + qty5*5 === fee);
+    }
+
+    if (rec10) rec10.value = record10;
+    if (rec5)  rec5.value  = record5;
+
+    if (valid && sum) {
+        const combined = [record10, record5].filter(Boolean).join(' + ');
+        sum.innerHTML = `<strong>✅ Ticket Record:</strong><br><span style="font-family:monospace;font-size:14px;">${combined}</span><br><small style="color:#64748b;">Saved automatically on submit</small>`;
+        sum.classList.add('visible');
+    }
+}
+
+// ── QR SCANNER ──
+let qrScanner = null;
+window.startQRScanner = function() {
+    const qrDiv = document.getElementById('qr-reader');
+    if (!qrDiv) return;
+    qrDiv.style.display = 'block';
+    if (qrScanner) { qrScanner.clear().catch(()=>{}); qrScanner = null; }
+    qrScanner = new Html5QrcodeScanner('qr-reader', { fps:10, qrbox:{width:250,height:250}, facingMode:'environment' }, false);
+    qrScanner.render(text => {
+        document.getElementById('plate-number').value = text.toUpperCase();
+        document.getElementById('plate-number').dispatchEvent(new Event('blur'));
+        qrScanner.clear().catch(()=>{});
+        qrDiv.style.display = 'none';
+        setVehicleStatus('✅ Plate scanned: ' + text, 'green');
+    }, ()=>{});
+};
+
+// ── CAMERA / PHOTO ──
+let capturedPhoto = null;
+window.capturePhoto = function() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        openCam();
+    } else { fallbackInput(); }
+};
+function openCam() {
+    const overlay = document.getElementById('camera-overlay');
+    const video   = document.getElementById('camera-video');
+    if (!overlay || !video) { fallbackInput(); return; }
+    overlay.classList.add('visible');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact:'environment' } } })
+    .catch(() => navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } }))
+    .catch(() => navigator.mediaDevices.getUserMedia({ video: true }))
+    .then(stream => { video.srcObject = stream; video.play(); window._camStream = stream; })
+    .catch(() => { closeCam(); fallbackInput(); });
+}
+window.snapPhoto = function() {
+    const video = document.getElementById('camera-video');
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    closeCam();
+    attachPhotoWithGPS(canvas.toDataURL('image/jpeg', 0.85));
+};
+window.closeCam = function() {
+    if (window._camStream) { window._camStream.getTracks().forEach(t => t.stop()); window._camStream = null; }
+    const overlay = document.getElementById('camera-overlay');
+    if (overlay) overlay.classList.remove('visible');
+};
+function fallbackInput() {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+    inp.onchange = e => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => attachPhotoWithGPS(ev.target.result);
+        reader.readAsDataURL(file);
+    };
+    inp.click();
+}
+async function attachPhotoWithGPS(imgData) {
+    let geo = null;
+    if (navigator.geolocation) {
+        try {
+            const pos = await new Promise((res,rej) => navigator.geolocation.getCurrentPosition(res,rej,{timeout:6000,enableHighAccuracy:true}));
+            geo = { lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy };
+        } catch(e) {}
+    }
+    capturedPhoto = { image: imgData, geo, ts: new Date().toISOString() };
+    const el = document.getElementById('arkabala-preview');
+    if (!el) return;
+    const geo2 = capturedPhoto.geo;
+    el.innerHTML = `
+        <img src="${imgData}" style="width:100%;border-radius:10px;margin-top:8px;">
+        <div style="font-size:12px;padding:7px 10px;margin-top:6px;border-radius:6px;${geo2?'background:#d1fae5;color:#065f46;':'background:#fef3c7;color:#92400e;'}">
+            ${geo2 ? `📍 GPS: ${geo2.lat.toFixed(6)}, ${geo2.lon.toFixed(6)} (±${Math.round(geo2.accuracy)}m)` : '⚠️ GPS unavailable'}
         </div>
-    </div>
-    <div class="header-right">
-        <div class="header-user" id="user-name">Loading...</div>
-        <button class="logout-btn" onclick="logout()">⬅ Logout</button>
-    </div>
-</div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button type="button" onclick="ocrScan('10')" style="padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔍 Read ₱10 Serial</button>
+            <button type="button" onclick="ocrScan('5')"  style="padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔍 Read ₱5 Serial</button>
+            <button type="button" onclick="removePhoto()" style="padding:8px 14px;background:#ef4444;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">❌ Remove</button>
+        </div>`;
+}
+window.removePhoto = function() {
+    capturedPhoto = null;
+    const el = document.getElementById('arkabala-preview');
+    if (el) el.innerHTML = '';
+};
 
-<div class="main-content">
-    <div class="status-msg" id="status-message"></div>
-    <form id="passenger-form">
+// ── OCR ──
+function preloadOCR() {
+    if (typeof Tesseract !== 'undefined') return;
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    document.head.appendChild(s);
+}
+window.ocrScan = async function(denom) {
+    if (!capturedPhoto) { alert('📸 Take a photo first, then tap Scan!'); return; }
+    if (typeof Tesseract === 'undefined') { alert('⏳ OCR loading, wait a moment and try again.'); return; }
+    const fieldId = denom === '5' ? 'serial-start-5' : 'serial-start-10';
+    const field   = document.getElementById(fieldId);
+    if (!field) return;
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '⏳...'; btn.disabled = true;
+    try {
+        const result = await Tesseract.recognize(capturedPhoto.image, 'eng', { tessedit_char_whitelist:'0123456789', logger:()=>{} });
+        const numbers = (result.data.text.replace(/\D/g,'').match(/\d{4,8}/g) || []);
+        if (numbers.length > 0) {
+            field.value = numbers[0].padStart(6,'0');
+            recalcTickets();
+            alert(`✅ Detected: ${numbers[0].padStart(6,'0')}\nFor ₱${denom} field — verify it's correct!`);
+        } else { alert('⚠️ Could not read number. Type manually.'); }
+    } catch(e) { alert('⚠️ OCR failed. Type manually.'); }
+    finally { btn.textContent = orig; btn.disabled = false; }
+};
 
-        <!-- VEHICLE -->
-        <div class="form-section">
-            <div class="section-title">🚗 Vehicle Information</div>
-            <div class="form-group">
-                <label>Plate Number</label>
-                <input type="text" id="plate-number" placeholder="e.g. AAD 5514"
-                       autocomplete="off" autocapitalize="characters" required>
-                <div id="vehicle-status"></div>
-            </div>
-            <button type="button" class="btn btn-blue" onclick="startQRScanner()">
-                📷 Scan QR Code (Plate Number)
-            </button>
-            <div id="qr-reader"></div>
-            <div class="form-group" style="margin-top:10px;">
-                <label>Vehicle Type</label>
-                <select id="denomination" required>
-                    <option value="">Select Vehicle Type</option>
-                    <option>BUS</option>
-                    <option>SHUTTLE VAN</option>
-                    <option>JEEP</option>
-                    <option>MULTICAB</option>
-                    <option>FILCAB</option>
-                    <option>TRICYCLE</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Transport Group</label>
-                <select id="transport-group" disabled required>
-                    <option value="">First select vehicle type</option>
-                </select>
-            </div>
-        </div>
+// ── FORM SUBMIT ──
+document.getElementById('passenger-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn  = document.getElementById('submit-btn');
+    const msg  = document.getElementById('status-message');
+    const user = getCurrentUser();
 
-        <!-- TRIP -->
-        <div class="form-section">
-            <div class="section-title">📋 Trip Details</div>
-            <div class="count-grid">
-                <div class="form-group">
-                    <label>Date</label>
-                    <input type="date" id="trip-date" required>
-                </div>
-                <div class="form-group">
-                    <label>Time</label>
-                    <input type="time" id="trip-time" required>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Arrival or Departure?</label>
-                <select id="type" required>
-                    <option value="">Select Type</option>
-                    <option value="ARRIVAL">🟢 ARRIVAL — Coming IN</option>
-                    <option value="DEPARTURE">🔴 DEPARTURE — Going OUT</option>
-                </select>
-            </div>
-            <div class="form-group hidden" id="origin-group">
-                <label>Coming From (Origin)</label>
-                <select id="origin"><option value="">Select Origin</option></select>
-            </div>
-            <div class="form-group hidden" id="destination-group">
-                <label>Going To (Destination)</label>
-                <select id="destination"><option value="">Select Destination</option></select>
-            </div>
-        </div>
+    btn.disabled = true; btn.textContent = '⏳ Submitting...';
+    if (msg) { msg.style.display = 'none'; }
 
-        <!-- PASSENGERS -->
-        <div class="form-section">
-            <div class="section-title">👥 Passenger Count</div>
-            <div class="count-grid">
-                <div class="form-group"><label>Adult Male</label>
-                    <input type="number" id="adult-male" class="pax" min="0" value="0"></div>
-                <div class="form-group"><label>Adult Female</label>
-                    <input type="number" id="adult-female" class="pax" min="0" value="0"></div>
-                <div class="form-group"><label>Child Male</label>
-                    <input type="number" id="child-male" class="pax" min="0" value="0"></div>
-                <div class="form-group"><label>Child Female</label>
-                    <input type="number" id="child-female" class="pax" min="0" value="0"></div>
-                <div class="form-group"><label>Senior Male</label>
-                    <input type="number" id="senior-male" class="pax" min="0" value="0"></div>
-                <div class="form-group"><label>Senior Female</label>
-                    <input type="number" id="senior-female" class="pax" min="0" value="0"></div>
-                <div class="form-group"><label>PWD Male</label>
-                    <input type="number" id="pwd-male" class="pax" min="0" value="0"></div>
-                <div class="form-group"><label>PWD Female</label>
-                    <input type="number" id="pwd-female" class="pax" min="0" value="0"></div>
-            </div>
-            <div class="form-group"><label>Pregnant Women</label>
-                <input type="number" id="pregnant" class="pax" min="0" value="0"></div>
-            <input type="hidden" id="adult-total">
-            <input type="hidden" id="child-total">
-            <div class="total-bar" id="total-passengers">Total Passengers: 0</div>
-        </div>
+    const type   = document.getElementById('type').value;
+    const denom  = document.getElementById('denomination').value;
+    const plate  = document.getElementById('plate-number').value.toUpperCase().trim();
+    const origin = type === 'ARRIVAL'    ? document.getElementById('origin').value      : "BROOKE'S POINT";
+    const dest   = type === 'DEPARTURE'  ? document.getElementById('destination').value  : "BROOKE'S POINT";
 
-        <!-- FEE + TICKET -->
-        <div class="form-section fee-section" id="fee-section">
-            <div class="section-title">💰 Terminal Fee</div>
-            <div id="fee-warning"></div>
-            <div class="fee-card">
-                <div class="fee-amount" id="fee-amount-display">₱0.00</div>
-                <div class="fee-label">Terminal Fee — Departure Only · Ordinance 2026-01</div>
-            </div>
-            <input type="hidden" id="terminal-fee-amount" value="0">
+    const am = +document.getElementById('adult-male').value    || 0;
+    const af = +document.getElementById('adult-female').value  || 0;
+    const cm = +document.getElementById('child-male').value    || 0;
+    const cf = +document.getElementById('child-female').value  || 0;
+    const sm = +document.getElementById('senior-male').value   || 0;
+    const sf = +document.getElementById('senior-female').value || 0;
+    const pm = +document.getElementById('pwd-male').value      || 0;
+    const pf = +document.getElementById('pwd-female').value    || 0;
+    const pg = +document.getElementById('pregnant').value      || 0;
 
-            <div class="form-group">
-                <label>Payment Method</label>
-                <select id="payment-method">
-                    <option value="">Select Method</option>
-                    <option value="Cash">💵 Cash (Arkabala Ticket)</option>
-                    <option value="GCash">📱 GCash</option>
-                    <option value="Maya">📱 Maya</option>
-                    <option value="Bank Transfer">🏦 Bank Transfer</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Payment Status</label>
-                <select id="payment-status">
-                    <option value="">Select Status</option>
-                    <option value="Paid">✅ Paid</option>
-                    <option value="Unpaid">❌ Unpaid / Will pay later</option>
-                    <option value="Waived">⚪ Waived (Special case)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Notes (optional)</label>
-                <textarea id="fee-notes" placeholder="Optional notes..."></textarea>
-            </div>
+    const fee    = document.getElementById('terminal-fee-amount').value || 0;
+    const method = document.getElementById('payment-method').value || '';
+    const status = document.getElementById('payment-status').value || '';
+    let   notes  = document.getElementById('fee-notes').value.trim();
 
-            <!-- TICKET SERIAL SECTION -->
-            <div class="ticket-section" id="ticket-section">
-                <div class="section-title" style="margin-top:4px;">🎫 Arkabala Ticket Serials</div>
-                <div class="ticket-hint" id="ticket-hint">Select fee above to see ticket info</div>
+    // Ticket records
+    const ticket10 = document.getElementById('ticket-record-10') ? document.getElementById('ticket-record-10').value : '';
+    const ticket5  = document.getElementById('ticket-record-5')  ? document.getElementById('ticket-record-5').value  : '';
 
-                <!-- ₱10 FIELD -->
-                <div class="ticket-field">
-                    <div class="ticket-label">
-                        <span class="denom-badge badge-10">₱10</span>
-                        Enter FIRST (starting) serial number:
-                    </div>
-                    <div class="ticket-row">
-                        <input type="number" id="serial-start-10" placeholder="000001"
-                               min="1" oninput="recalcTickets()">
-                        <button type="button" class="btn btn-blue btn-sm"
-                                onclick="ocrScan('10')">🔍 Scan</button>
-                    </div>
-                    <div class="ticket-result" id="result-10"></div>
-                </div>
+    // Auto receipt
+    const receipt = `TF-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
 
-                <!-- ₱5 FIELD -->
-                <div class="ticket-field">
-                    <div class="ticket-label">
-                        <span class="denom-badge badge-5">₱5</span>
-                        Enter FIRST (starting) serial number:
-                    </div>
-                    <div class="ticket-row">
-                        <input type="number" id="serial-start-5" placeholder="000001"
-                               min="1" oninput="recalcTickets()">
-                        <button type="button" class="btn btn-purple btn-sm"
-                                onclick="ocrScan('5')">🔍 Scan</button>
-                    </div>
-                    <div class="ticket-result" id="result-5"></div>
-                </div>
+    // GPS note
+    if (capturedPhoto) {
+        notes = (notes ? notes + ' | ' : '') + 'Arkabala photo';
+        if (capturedPhoto.geo) notes += ` GPS:${capturedPhoto.geo.lat.toFixed(5)},${capturedPhoto.geo.lon.toFixed(5)}`;
+    }
 
-                <div class="ticket-summary" id="ticket-summary"></div>
-                <input type="hidden" id="ticket-record-10">
-                <input type="hidden" id="ticket-record-5">
-            </div>
+    const params = new URLSearchParams({
+        tripDate:       document.getElementById('trip-date').value,
+        tripTime:       document.getElementById('trip-time').value,
+        type, denomination: denom,
+        transportGroup: document.getElementById('transport-group').value,
+        origin, destination: dest, plateNumber: plate,
+        adultMale:am, adultFemale:af, adultTotal:am+af,
+        childMale:cm, childFemale:cf, childTotal:cm+cf,
+        seniorMale:sm, seniorFemale:sf, seniorTotal:sm+sf,
+        totalMales:am+cm, totalFemales:af+cf,
+        pwdMale:pm, pwdFemale:pf, pwdTotal:pm+pf,
+        pregnant:pg, totalPassengers:am+af+cm+cf,
+        username: user.username,
+        terminalFee:fee, paymentMethod:method,
+        paymentStatus:status, receiptNumber:receipt,
+        feeNotes:notes, ticket10, ticket5
+    });
 
-            <!-- PHOTO -->
-            <div style="margin-top:12px;">
-                <button type="button" class="btn btn-purple" onclick="capturePhoto()">
-                    📸 Capture Arkabala Photo (with GPS)
-                </button>
-                <div id="arkabala-preview"></div>
-            </div>
-        </div>
+    try {
+        const res  = await fetch(CONFIG.DATA_API_URL + '?' + params.toString(), { method:'GET', redirect:'follow' });
+        const data = await res.json();
+        if (data.success) {
+            if (denom === 'TRICYCLE' && type === 'DEPARTURE' && status === 'Paid' && parseFloat(fee) > 0) {
+                markTricyclePaid(plate, receipt);
+            }
+            let ok = '✅ Submitted!';
+            if (type === 'DEPARTURE' && parseFloat(fee) > 0) ok += ` Fee: ₱${fee}`;
+            if (ticket10) ok += ` | ₱10: ${ticket10}`;
+            if (ticket5)  ok += ` | ₱5: ${ticket5}`;
+            if (msg) { msg.textContent = ok; msg.className = 'status-msg status-success'; msg.style.display = 'block'; }
+            setTimeout(() => {
+                document.getElementById('passenger-form').reset();
+                setDateTime();
+                const tp = document.getElementById('total-passengers');
+                if (tp) tp.textContent = 'Total Passengers: 0';
+                if (msg) msg.style.display = 'none';
+                document.getElementById('fee-section').classList.remove('visible');
+                document.getElementById('ticket-section')?.classList.remove('visible');
+                ['origin-group','destination-group'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+                document.getElementById('transport-group').innerHTML = '<option value="">First select vehicle type</option>';
+                document.getElementById('transport-group').disabled = true;
+                ['payment-method','payment-status','fee-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
+                capturedPhoto = null;
+                const prev = document.getElementById('arkabala-preview');
+                if (prev) prev.innerHTML = '';
+            }, 3500);
+        } else { throw new Error(data.message || 'Failed'); }
+    } catch(err) {
+        if (msg) { msg.textContent = '❌ Submission failed. Check connection and try again.'; msg.className = 'status-msg status-error'; msg.style.display = 'block'; }
+    } finally {
+        btn.disabled = false; btn.textContent = '📤 SUBMIT DATA';
+    }
+});
 
-        <!-- SUBMIT -->
-        <button type="submit" class="btn btn-success" id="submit-btn" style="margin-bottom:28px;">
-            📤 SUBMIT DATA
-        </button>
-
-    </form>
-</div>
-
-<script src="config.js"></script>
-<script src="auth.js"></script>
-<script src="app-logic.js"></script>
-</body>
-</html>
+console.log('✅ BPGT V4.5 TICKET EDITION loaded!');
