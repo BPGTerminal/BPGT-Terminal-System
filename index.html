@@ -167,7 +167,7 @@
                    autocomplete="current-password">
         </div>
 
-        <button class="login-btn" onclick="handleLogin()">🔐 LOGIN</button>
+        <button class="login-btn" onclick="login()">🔐 LOGIN</button>
 
         <div class="login-links">
             <a href="#" onclick="showRegister()">Create Account</a>
@@ -183,7 +183,7 @@
 <script>
     // Allow Enter key to login
     document.getElementById('password').addEventListener('keydown', e => {
-        if (e.key === 'Enter') handleLogin();
+        if (e.key === 'Enter') login();
     });
     document.getElementById('username').addEventListener('keydown', e => {
         if (e.key === 'Enter') document.getElementById('password').focus();
