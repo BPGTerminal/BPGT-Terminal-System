@@ -2,591 +2,692 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#1e3a8a">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BPGT Terminal System</title>
+
+    <!-- ✅ PWA - Makes app installable, removes Chrome bar when installed -->
     <link rel="manifest" href="manifest.json">
-    <title>BPGT - Data Entry</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BPGT">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- ✅ PWA Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('service-worker.js')
+            .then(() => console.log('✅ BPGT PWA ready'))
+            .catch(e => console.log('SW error:', e));
+        });
+      }
+    </script>
+
+    <!-- QR Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* ====================================================
+           RESET & BASE — fixes the '''html''' background bug
+           ==================================================== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            background-color: #f1f5f9;  /* ✅ PLAIN color, no text */
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 15px;
+            color: #1e293b;
+            overflow-x: hidden;         /* ✅ prevents horizontal scroll */
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            min-height: 100vh;
-            padding: 20px;
+        /* ====================================================
+           HEADER
+           ==================================================== */
+        .app-header {
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+        .header-title { font-size: 14px; font-weight: 700; line-height: 1.2; }
+        .header-subtitle { font-size: 11px; opacity: 0.85; }
+        .header-user { font-size: 12px; opacity: 0.9; text-align: right; }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 4px;
         }
 
-        .container {
+        /* ====================================================
+           MAIN CONTENT AREA
+           ==================================================== */
+        .main-content {
             max-width: 600px;
             margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* ====================================================
+           FORM SECTIONS
+           ==================================================== */
+        .form-section {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 24px;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 3px solid #1e3a8a;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo {
-            width: 60px;
-            height: 60px;
-        }
-
-        .header-text h1 {
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
             color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #eff6ff;
+        }
+
+        /* ====================================================
+           FORM INPUTS
+           ==================================================== */
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #1e293b;
+            background: #f8fafc;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+        }
+        .form-group select { cursor: pointer; }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+
+        /* ====================================================
+           PASSENGER COUNT GRID
+           ==================================================== */
+        .count-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .count-item { position: relative; }
+        .count-total {
+            background: #f0fdf4;
+            border: 1.5px solid #059669;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-weight: 700;
+            color: #059669;
+            text-align: center;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* ====================================================
+           BUTTONS
+           ==================================================== */
+        .btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: #1e3a8a; color: white; }
+        .btn-success { background: #059669; color: white; }
+        .btn-blue    { background: #3b82f6; color: white; margin-bottom: 10px; }
+        .btn-purple  { background: #7c3aed; color: white; margin-bottom: 10px; }
+        .btn-orange  { background: #ea580c; color: white; }
+        .btn-sm {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-right: 8px;
+            margin-top: 6px;
+        }
+
+        /* ====================================================
+           FEE SECTION
+           ==================================================== */
+        .fee-section { display: none; }
+        .fee-section.visible { display: block; }
+
+        .fee-card {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border: 2px solid #059669;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+        .fee-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: #059669;
+        }
+        .fee-label { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+        /* ====================================================
+           TICKET SECTION (V4.5)
+           ==================================================== */
+        .ticket-section { display: none; }
+        .ticket-section.visible { display: block; }
+
+        .ticket-header {
+            background: #fef3c7;
+            border: 1.5px solid #f59e0b;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #92400e;
+        }
+        .ticket-denom-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .ticket-denom-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            color: #475569;
+        }
+        .ticket-denom-btn.active {
+            border-color: #1e3a8a;
+            background: #eff6ff;
+            color: #1e3a8a;
+        }
+
+        .ticket-field {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .ticket-field-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ticket-input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .ticket-input-row input {
+            flex: 1;
+            padding: 10px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
             font-size: 18px;
             font-weight: 700;
+            color: #1e293b;
+            letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+            background: white;
         }
-
-        .header-text .user {
+        .ticket-result {
+            margin-top: 8px;
             font-size: 12px;
-            color: #64748b;
+            color: #475569;
+            background: white;
+            border-radius: 6px;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            min-height: 24px;
         }
+        .ticket-result.ok { background: #f0fdf4; border-color: #059669; color: #065f46; }
+        .ticket-result.warn { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
 
-        .logout-btn {
+        .ticket-summary {
+            background: #eff6ff;
+            border: 2px solid #1e3a8a;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #1e3a8a;
+            display: none;
+        }
+        .ticket-summary.visible { display: block; }
+
+        /* ====================================================
+           CAMERA OVERLAY (full screen camera)
+           ==================================================== */
+        .camera-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: black;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        .camera-overlay.visible { display: flex; }
+        #camera-video { width: 100%; flex: 1; object-fit: cover; }
+        .camera-controls {
+            background: #1e293b;
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .snap-btn {
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 70px; height: 70px;
+            font-size: 28px;
+            cursor: pointer;
+        }
+        .close-cam-btn {
             background: #ef4444;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            font-size: 20px;
             cursor: pointer;
         }
 
-        .section {
-            margin-bottom: 24px;
-            padding-bottom: 24px;
-            border-bottom: 2px solid #f1f5f9;
-        }
-
-        .section:last-child {
-            border-bottom: none;
-        }
-
-        .section-title {
-            color: #1e3a8a;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .section-icon {
-            font-size: 28px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group.hidden {
-            display: none;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        label {
-            display: block;
-            color: #475569;
+        /* ====================================================
+           STATUS MESSAGES
+           ==================================================== */
+        .status-message {
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 14px;
             font-size: 14px;
             font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 15px;
-            transition: all 0.3s;
-            background: white;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #1e3a8a;
-            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
-        }
-
-        input[type="number"] {
-            text-align: center;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        select {
-            cursor: pointer;
-        }
-
-        .auto-filled {
-            background: #dbeafe !important;
-            border-color: #3b82f6 !important;
-        }
-
-        .passenger-grid {
-            display: grid;
-            grid-template-columns: 2fr 2fr 1.5fr;
-            gap: 12px;
-            align-items: end;
-        }
-
-        .passenger-label {
-            font-size: 48px;
-            text-align: center;
-            margin-bottom: 4px;
-        }
-
-        .total-display {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: white;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .submit-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            border: none;
-            padding: 18px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 24px;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-
-        .submit-btn:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .status-message {
-            padding: 16px;
-            border-radius: 8px;
-            margin-top: 16px;
-            text-align: center;
-            font-weight: 600;
             display: none;
         }
+        .status-success { background: #d1fae5; color: #065f46; border: 1.5px solid #059669; }
+        .status-error   { background: #fee2e2; color: #991b1b; border: 1.5px solid #ef4444; }
 
-        .status-success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 2px solid #10b981;
+        /* ====================================================
+           INFO BOXES
+           ==================================================== */
+        .info-box {
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .info-blue   { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+        .info-green  { background: #f0fdf4; border-left: 4px solid #059669; color: #065f46; }
+        .info-orange { background: #fff7ed; border-left: 4px solid #ea580c; color: #92400e; }
+        .info-yellow { background: #fef3c7; border-left: 4px solid #f59e0b; color: #92400e; }
+        .info-red    { background: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; }
+
+        /* ====================================================
+           VEHICLE STATUS & AUTO-FILL INDICATOR
+           ==================================================== */
+        #vehicle-status, #fee-warning { margin-top: 6px; }
+
+        /* ====================================================
+           HIDDEN UTILITY
+           ==================================================== */
+        .hidden { display: none !important; }
+
+        /* ====================================================
+           QR READER
+           ==================================================== */
+        #qr-reader {
+            display: none;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
         }
 
-        .status-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 2px solid #ef4444;
+        /* ====================================================
+           PHOTO PREVIEW
+           ==================================================== */
+        #arkabala-preview img {
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 8px;
         }
 
-        @media (max-width: 640px) {
-            .form-row, .passenger-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header {
-                flex-direction: column;
-                gap: 12px;
-            }
+        /* ====================================================
+           RESPONSIVE SMALL SCREENS
+           ==================================================== */
+        @media (max-width: 360px) {
+            .main-content { padding: 10px; }
+            .fee-amount { font-size: 26px; }
         }
-           ```css
-   .hidden {
-       display: none !important;
-   }
     </style>
-    ```html
-<!-- PWA MANIFEST - Makes app installable -->
-<link rel="manifest" href="manifest.json">
-
-<!-- iOS / Safari support -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="BPGT">
-<link rel="apple-touch-icon" href="icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
-
-<!-- Android / Chrome theme color -->
-<meta name="theme-color" content="#1e3a8a">
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- PWA SERVICE WORKER REGISTRATION -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/BPGT-Terminal-System/service-worker.js')
-        .then(reg => console.log('✅ BPGT PWA ready'))
-        .catch(err => console.log('Service worker failed:', err));
-    });
-  }
-</script>
-```
-
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-left">
-                <img src="logo.png" alt="BPGT Logo" class="logo">
-                <div class="header-text">
-                    <h1>BPGT Terminal</h1>
-                    <div class="user">👤 <span id="user-name">Loading...</span></div>
-                </div>
+
+<!-- ✅ CAMERA OVERLAY (full screen, avoids gallery) -->
+<div class="camera-overlay" id="camera-overlay">
+    <video id="camera-video" autoplay playsinline></video>
+    <div class="camera-controls">
+        <button class="close-cam-btn" onclick="closeLiveCamera()">✕</button>
+        <button class="snap-btn" onclick="snapPhoto()">📸</button>
+    </div>
+</div>
+
+<!-- ✅ APP HEADER -->
+<div class="app-header">
+    <div class="header-left">
+        <img src="bpgt-logo.png" alt="BPGT" class="header-logo" onerror="this.style.display='none'">
+        <div>
+            <div class="header-title">🚌 BPGT Terminal</div>
+            <div class="header-subtitle">Passenger & Revenue System</div>
+        </div>
+    </div>
+    <div style="text-align:right;">
+        <div class="header-user" id="user-name">Loading...</div>
+        <button class="logout-btn" onclick="logout()">⬅ Logout</button>
+    </div>
+</div>
+
+<!-- ✅ MAIN CONTENT -->
+<div class="main-content">
+
+    <!-- STATUS MESSAGE -->
+    <div class="status-message" id="status-message"></div>
+
+    <form id="passenger-form">
+
+        <!-- ── SECTION 1: VEHICLE ── -->
+        <div class="form-section">
+            <div class="section-title">🚗 Vehicle Information</div>
+
+            <div class="form-group">
+                <label>Plate Number</label>
+                <input type="text" id="plate-number" placeholder="e.g. AAD 5514"
+                       autocomplete="off" autocapitalize="characters" required>
+                <div id="vehicle-status"></div>
             </div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+
+            <button type="button" class="btn btn-blue" onclick="startQRScanner()">
+                📷 Scan QR Code (Plate Number)
+            </button>
+            <div id="qr-reader"></div>
+
+            <div class="form-group">
+                <label>Vehicle Type</label>
+                <select id="denomination" required>
+                    <option value="">Select Vehicle Type</option>
+                    <option>BUS</option>
+                    <option>SHUTTLE VAN</option>
+                    <option>JEEP</option>
+                    <option>MULTICAB</option>
+                    <option>FILCAB</option>
+                    <option>TRICYCLE</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Transport Group</label>
+                <select id="transport-group" disabled required>
+                    <option value="">First select vehicle type</option>
+                </select>
+            </div>
         </div>
 
-        <form id="passenger-form">
-            <!-- Vehicle Section -->
-            <div class="section">
-                <div class="section-title">
-                    <span class="section-icon">🚗</span>
-                    Vehicle Information
+        <!-- ── SECTION 2: TRIP ── -->
+        <div class="form-section">
+            <div class="section-title">📋 Trip Details</div>
+
+            <div class="count-grid">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="trip-date" required>
                 </div>
                 <div class="form-group">
-                    <label for="plate-number">Plate Number *</label>
-                    <input type="text" id="plate-number" required placeholder="e.g., ABC 1234" style="text-transform: uppercase;">
-                                        
-                    <!-- QR Scanner Button (already there) -->
-                    
-                    <!-- NEW: Vehicle Status Messages -->
-                    <div id="vehicle-status"></div>
-```
-                    <!-- QR Scanner Button -->
-                    <button type="button" id="qr-scan-btn" style="
-                        margin-top: 8px;
-                        width: 100%;
-                        padding: 10px;
-                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                        color: white;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 14px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: all 0.3s;
-                    " onclick="startQRScanner()">
-                        📷 Scan QR Code
-                    </button>
-                    
-                    <!-- QR Reader Container -->
-                    <div id="qr-reader" style="
-                        display: none;
-                        margin-top: 12px;
-                        width: 100%;
-                        border-radius: 8px;
-                        overflow: hidden;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    "></div>
+                    <label>Time</label>
+                    <input type="time" id="trip-time" required>
                 </div>
             </div>
 
-            <!-- Trip Details -->
-            <div class="section">
-                <div class="section-title">
-                    <span class="section-icon">📋</span>
-                    Trip Details
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="trip-date">Date *</label>
-                        <input type="date" id="trip-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="trip-time">Time *</label>
-                        <input type="time" id="trip-time" required>
-                    </div>
+            <div class="form-group">
+                <label>Arrival or Departure?</label>
+                <select id="type" required>
+                    <option value="">Select Type</option>
+                    <option value="ARRIVAL">🟢 ARRIVAL — Coming IN</option>
+                    <option value="DEPARTURE">🔴 DEPARTURE — Going OUT</option>
+                </select>
+            </div>
+
+            <!-- Origin (for Arrivals) -->
+            <div class="form-group hidden" id="origin-group">
+                <label>Coming From (Origin)</label>
+                <select id="origin">
+                    <option value="">Select Origin</option>
+                </select>
+            </div>
+
+            <!-- Destination (for Departures) -->
+            <div class="form-group hidden" id="destination-group">
+                <label>Going To (Destination)</label>
+                <select id="destination">
+                    <option value="">Select Destination</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ── SECTION 3: PASSENGERS ── -->
+        <div class="form-section">
+            <div class="section-title">👥 Passenger Count</div>
+
+            <div class="count-grid">
+                <div class="form-group">
+                    <label>Adult Male</label>
+                    <input type="number" id="adult-male" class="passenger-count" min="0" value="0">
                 </div>
                 <div class="form-group">
-                    <label for="type">Type *</label>
-                    <select id="type" required>
-                        <option value="">Select Type</option>
-                        <option value="ARRIVAL">ARRIVAL</option>
-                        <option value="DEPARTURE">DEPARTURE</option>
-                    </select>
+                    <label>Adult Female</label>
+                    <input type="number" id="adult-female" class="passenger-count" min="0" value="0">
                 </div>
                 <div class="form-group">
-                    <label for="denomination">Vehicle Type *</label>
-                    <select id="denomination" required>
-                        <option value="">Select Vehicle Type</option>
-                        <option value="BUS">BUS</option>
-                        <option value="SHUTTLE VAN">SHUTTLE VAN</option>
-                        <option value="TRICYCLE">TRICYCLE</option>
-                        <option value="JEEP">JEEP</option>
-                        <option value="MULTICAB">MULTICAB</option>
-                        <option value="FILCAB">FILCAB</option>
-                    </select>
+                    <label>Child Male</label>
+                    <input type="number" id="child-male" class="passenger-count" min="0" value="0">
                 </div>
                 <div class="form-group">
-                    <label for="transport-group">Transport Group *</label>
-                    <select id="transport-group" required disabled>
-                        <option value="">First select vehicle type</option>
-                    </select>
+                    <label>Child Female</label>
+                    <input type="number" id="child-female" class="passenger-count" min="0" value="0">
                 </div>
-                
-                <!-- Smart Origin/Destination -->
-                <div class="form-group hidden" id="origin-group">
-                    <label for="origin">Origin (Where from?) *</label>
-                    <select id="origin"></select>
+                <div class="form-group">
+                    <label>Senior Male</label>
+                    <input type="number" id="senior-male" class="passenger-count" min="0" value="0">
                 </div>
-                
-                <div class="form-group hidden" id="destination-group">
-                    <label for="destination">Destination (Where to?) *</label>
-                    <select id="destination"></select>
+                <div class="form-group">
+                    <label>Senior Female</label>
+                    <input type="number" id="senior-female" class="passenger-count" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>PWD Male</label>
+                    <input type="number" id="pwd-male" class="passenger-count" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>PWD Female</label>
+                    <input type="number" id="pwd-female" class="passenger-count" min="0" value="0">
                 </div>
             </div>
 
-            <!-- Passenger Demographics -->
-            <div class="section">
-                <div class="section-title">
-                    <span class="section-icon">👥</span>
-                    Adult Passengers
-                </div>
-                <div class="passenger-grid">
-                    <div class="form-group">
-                        <div class="passenger-label">👨</div>
-                        <label for="adult-male">Male</label>
-                        <input type="number" id="adult-male" min="0" value="0" class="passenger-count">
-                    </div>
-                    <div class="form-group">
-                        <div class="passenger-label">👩</div>
-                        <label for="adult-female">Female</label>
-                        <input type="number" id="adult-female" min="0" value="0" class="passenger-count">
-                    </div>
-                    <div class="form-group">
-                        <label for="adult-total">Total</label>
-                        <input type="number" id="adult-total" readonly style="background: #f1f5f9; font-weight: 700; color: #1e3a8a;">
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>Pregnant Women</label>
+                <input type="number" id="pregnant" class="passenger-count" min="0" value="0">
             </div>
 
-            <div class="section">
-                <div class="section-title">
-                    <span class="section-icon">👶</span>
-                    Children
-                </div>
-                <div class="passenger-grid">
-                    <div class="form-group">
-                        <div class="passenger-label">👦</div>
-                        <label for="child-male">Male</label>
-                        <input type="number" id="child-male" min="0" value="0" class="passenger-count">
-                    </div>
-                    <div class="form-group">
-                        <div class="passenger-label">👧</div>
-                        <label for="child-female">Female</label>
-                        <input type="number" id="child-female" min="0" value="0" class="passenger-count">
-                    </div>
-                    <div class="form-group">
-                        <label for="child-total">Total</label>
-                        <input type="number" id="child-total" readonly style="background: #f1f5f9; font-weight: 700; color: #1e3a8a;">
-                    </div>
-                </div>
+            <input type="hidden" id="adult-total">
+            <input type="hidden" id="child-total">
+
+            <div class="count-total" id="total-passengers">Total Passengers: 0</div>
+        </div>
+
+        <!-- ── SECTION 4: TERMINAL FEE ── -->
+        <div class="form-section fee-section" id="fee-section">
+            <div class="section-title">💰 Terminal Fee</div>
+
+            <div id="fee-warning"></div>
+
+            <div class="fee-card">
+                <div class="fee-amount" id="fee-amount-display">₱0.00</div>
+                <div class="fee-label">Terminal Fee — Departure Only</div>
+            </div>
+            <input type="hidden" id="terminal-fee-amount" value="0">
+
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select id="payment-method">
+                    <option value="">Select Method</option>
+                    <option value="Cash">💵 Cash</option>
+                    <option value="GCash">📱 GCash</option>
+                    <option value="Maya">📱 Maya</option>
+                    <option value="Bank Transfer">🏦 Bank Transfer</option>
+                </select>
             </div>
 
-            <!-- Subcategories -->
-            <div class="section">
-                <div class="section-title">
-                    <span class="section-icon">📊</span>
-                    Passenger Categories
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="senior-male">👴 Senior Male</label>
-                        <input type="number" id="senior-male" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="senior-female">👵 Senior Female</label>
-                        <input type="number" id="senior-female" min="0" value="0">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="pwd-male">👨‍🦽 PWD Male</label>
-                        <input type="number" id="pwd-male" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="pwd-female">👩‍🦽 PWD Female</label>
-                        <input type="number" id="pwd-female" min="0" value="0">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="pregnant">🤰 Pregnant</label>
-                    <input type="number" id="pregnant" min="0" value="0">
-                </div>
+            <div class="form-group">
+                <label>Payment Status</label>
+                <select id="payment-status">
+                    <option value="">Select Status</option>
+                    <option value="Paid">✅ Paid</option>
+                    <option value="Unpaid">❌ Unpaid / Will pay later</option>
+                    <option value="Waived">⚪ Waived (Special case)</option>
+                </select>
             </div>
 
-            <!-- Total Passengers -->
-            <div class="total-display" id="total-passengers">
-                Total Passengers: 0
+            <div class="form-group">
+                <label>Receipt Number (auto-generated)</label>
+                <input type="text" id="receipt-number" placeholder="TF-2026-XXXX (auto)">
             </div>
-<!-- TERMINAL FEE COLLECTION SECTION - V4.0 -->
-<!-- Add this section AFTER the "Passenger Categories" section and BEFORE the "Total Passengers" display -->
 
-            <!-- Terminal Fee Collection (Only for Departures) -->
-            <div class="section hidden" id="fee-section">
-                <div class="section-title">
-                    <span class="section-icon">💰</span>
-                    Terminal Fee Collection
-                </div>
-
-                <!-- Fee Amount Display (Auto-calculated) -->
-                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-                            color: white; 
-                            padding: 16px; 
-                            border-radius: 12px; 
-                            text-align: center; 
-                            margin-bottom: 16px;
-                            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Terminal Fee</div>
-                    <div style="font-size: 32px; font-weight: 700;" id="fee-amount-display">₱0.00</div>
-                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Per Municipal Ordinance 2026-01</div>
-                </div>
-
-                <!-- Hidden field to store fee amount -->
-                <input type="hidden" id="terminal-fee-amount" value="0">
-
-                <div class="form-group">
-                    <label for="payment-method">Payment Method *</label>
-                    <select id="payment-method">
-                        <option value="">Select Payment Method</option>
-                        <option value="Cash">💵 Cash</option>
-                        <option value="GCash">📱 GCash</option>
-                        <option value="Maya">💳 Maya</option>
-                        <option value="Bank Transfer">🏦 Bank Transfer</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="payment-status">Payment Status *</label>
-                    <select id="payment-status">
-                        <option value="">Select Status</option>
-                        <option value="Paid">✅ Paid</option>
-                        <option value="Unpaid">⏳ Unpaid</option>
-                        <option value="Waived">🎫 Waived (Special)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="receipt-number">Receipt Number (Optional)</label>
-                    <input type="text" id="receipt-number" placeholder="e.g., TF-2026-0001">
-                    <small style="color: #64748b; font-size: 12px;">Auto-generated if left blank</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="fee-notes">Notes (Optional)</label>
-                    <input type="text" id="fee-notes" placeholder="e.g., Special pass reason">
-                </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="fee-notes" placeholder="Optional notes..."></textarea>
             </div>
-                <div class="form-group">
-                    <label>Arkabala Photo (Optional)</label>
-                    <button type="button" onclick="captureArkabalaPhoto()" style="
-                        width: 100%;
-                        padding: 12px;
-                        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-                        color: white;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 14px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: all 0.3s;
-                    ">
-                        📸 Capture Arkabala Photo
-                    </button>
-                    <div id="arkabala-preview"></div>
-                    <small style="color: #64748b; font-size: 12px; display: block; margin-top: 4px;">
-                        Take a photo of the physical cash ticket for records
-                    </small>
+
+            <!-- ── TICKET SECTION (V4.5) ── -->
+            <div class="ticket-section" id="ticket-section">
+                <div class="section-title" style="margin-top:4px;">🎫 Cash Ticket (Arkabala) Serial Numbers</div>
+
+                <div class="ticket-header" id="ticket-denomination-hint">
+                    Loading fee info...
                 </div>
 
-                <!-- Warning/Info Message Area -->
-                <div id="fee-warning"></div>
-
-<!-- END ARKABALA PHOTO SECTION -->
-
-
-<!-- ALSO UPDATE THE EXISTING FEE AMOUNT DISPLAY TO INCLUDE WARNING DIV -->
-<!-- Replace the fee amount div with this: -->
-
-                <!-- Fee Amount Display (Auto-calculated) -->
-                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-                            color: white; 
-                            padding: 16px; 
-                            border-radius: 12px; 
-                            text-align: center; 
-                            margin-bottom: 16px;
-                            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Terminal Fee</div>
-                    <div style="font-size: 32px; font-weight: 700;" id="fee-amount-display">₱0.00</div>
-                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Per Municipal Ordinance 2026-01</div>
+                <!-- ₱10 TICKET FIELD -->
+                <div class="ticket-field" id="field-10">
+                    <div class="ticket-field-label">
+                        <span style="background:#1e3a8a;color:white;padding:2px 8px;border-radius:4px;font-size:12px;">₱10</span>
+                        Ticket — Enter FIRST serial number:
+                    </div>
+                    <div class="ticket-input-row">
+                        <input type="number" id="serial-start-10" placeholder="000001"
+                               min="1" oninput="recalculateTickets()" style="font-family:monospace;">
+                        <button type="button" class="btn btn-blue btn-sm"
+                                onclick="readSerialWithOCR('10')" style="white-space:nowrap;">🔍 Scan</button>
+                    </div>
+                    <div class="ticket-result" id="result-10"></div>
                 </div>
 
-                <!-- Hidden field to store fee amount -->
-                <input type="hidden" id="terminal-fee-amount" value="0">
+                <!-- ₱5 TICKET FIELD -->
+                <div class="ticket-field" id="field-5">
+                    <div class="ticket-field-label">
+                        <span style="background:#7c3aed;color:white;padding:2px 8px;border-radius:4px;font-size:12px;">₱5</span>
+                        Ticket — Enter FIRST serial number:
+                    </div>
+                    <div class="ticket-input-row">
+                        <input type="number" id="serial-start-5" placeholder="000001"
+                               min="1" oninput="recalculateTickets()" style="font-family:monospace;">
+                        <button type="button" class="btn btn-blue btn-sm"
+                                onclick="readSerialWithOCR('5')" style="white-space:nowrap;">🔍 Scan</button>
+                    </div>
+                    <div class="ticket-result" id="result-5"></div>
+                </div>
 
-<!-- END TERMINAL FEE SECTION -->
+                <!-- TICKET SUMMARY -->
+                <div class="ticket-summary" id="ticket-summary"></div>
+                <input type="hidden" id="ticket-record-10">
+                <input type="hidden" id="ticket-record-5">
 
+            </div><!-- end ticket-section -->
 
-<!-- STYLE TO ADD (put this in the <style> section at the top) -->
-<style>
-.hidden {
-    display: none !important;
-}
-</style>
+            <!-- Arkabala Photo -->
+            <div style="margin-top:14px;">
+                <button type="button" class="btn btn-purple" onclick="captureArkabalaPhoto()">
+                    📸 Capture Arkabala Photo (with GPS)
+                </button>
+                <div id="arkabala-preview"></div>
+            </div>
 
-            <button type="submit" class="submit-btn" id="submit-btn">
-                📤 SUBMIT DATA
-            </button>
+        </div><!-- end fee-section -->
 
-            <div class="status-message" id="status-message"></div>
-        </form>
-    </div>
+        <!-- ── SUBMIT ── -->
+        <button type="submit" class="btn btn-success" id="submit-btn" style="margin-bottom:24px;">
+            📤 SUBMIT DATA
+        </button>
 
-    <!-- QR Code Scanner Library -->
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    </form>
+</div><!-- end main-content -->
 
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script src="app-logic.js"></script>
+<!-- Scripts -->
+<script src="auth.js"></script>
+<script src="config.js"></script>
+<script src="app-logic.js"></script>
+
 </body>
 </html>
