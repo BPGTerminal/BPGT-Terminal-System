@@ -1,66 +1,47 @@
-// BPGT Terminal System - Service Worker
-// Enables offline access and app-like behavior
-// Version: 4.5
+// BPGT Service Worker v4.5 - Minimal
+const CACHE = 'bpgt-v4.5';
 
-const CACHE_NAME = 'bpgt-terminal-v4.5';
-const OFFLINE_URL = '/BPGT-Terminal-System/offline.html';
-
-// Files to cache for offline use
-const CACHE_FILES = [
-  '/BPGT-Terminal-System/',
-  '/BPGT-Terminal-System/index.html',
-  '/BPGT-Terminal-System/app.html',
-  '/BPGT-Terminal-System/app-logic.js',
-  '/BPGT-Terminal-System/auth.js',
-  '/BPGT-Terminal-System/config.js',
-  '/BPGT-Terminal-System/style.css',
-  '/BPGT-Terminal-System/manifest.json',
-  '/BPGT-Terminal-System/icons/icon-192.png',
-  '/BPGT-Terminal-System/icons/icon-512.png',
-];
-
-// Install: cache all essential files
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(CACHE_FILES))
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener('install', e => {
+  self.skipWaiting();
 });
 
-// Activate: clear old caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
+self.addEventListener('activate', e => {
+  e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-            .map(key => caches.delete(key))
-      )
+      Promise.all(keys.map(key => caches.delete(key)))
     ).then(() => self.clients.claim())
   );
 });
 
-// Fetch: serve from cache when offline
-self.addEventListener('fetch', event => {
-  // Skip non-GET requests and API calls (always need fresh data)
-  if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('script.google.com')) return;
-  if (event.request.url.includes('googleapis.com')) return;
-
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // Cache successful responses
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => {
-        // Offline: serve from cache
-        return caches.match(event.request)
-          .then(cached => cached || caches.match('/BPGT-Terminal-System/'));
-      })
-  );
+self.addEventListener('fetch', e => {
+  // Always fetch fresh — no caching that breaks updates
+  if (e.request.url.includes('script.google.com')) return;
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
+```
+
+**Commit that.**
+
+---
+
+### **Step 4: Reinstall fresh**
+
+1. Open Chrome
+2. Go to your URL
+3. **Hard refresh** — hold reload button → **Hard reload**
+4. Login should work now!
+5. Then ⋮ → Add to Home Screen → Install
+
+---
+
+## ⚡ **WHY THIS KEEPS HAPPENING:**
+```
+Old service worker cached broken files
+New files uploaded to GitHub
+But phone says "I have this cached, no need to download!"
+So it loads the OLD broken version forever
+
+The simpler service worker above = 
+always fetches fresh files
+never gets stuck
+still works offline for basic stuff
