@@ -2,337 +2,423 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BPGT Admin Dashboard</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="BPGT Admin">
     <meta name="theme-color" content="#1e3a8a">
-    <title>BPGT - Admin Dashboard</title>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        html, body {
+            width: 100%;
             min-height: 100vh;
-            padding: 20px;
+            background: #f1f5f9;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 14px;
+            color: #1e293b;
+            /* ✅ KEY FIX: body does NOT scroll horizontally */
+            overflow-x: hidden;
         }
 
-        .container {
+        /* ── HEADER ── */
+        .admin-header {
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            color: white;
+            padding: 14px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             max-width: 900px;
             margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 32px;
         }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #1e3a8a;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .logo {
-            width: 60px;
-            height: 60px;
-        }
-
-        h1 {
-            color: #1e3a8a;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            color: #64748b;
-            font-size: 14px;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .nav-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px 20px;
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 38px; height: 38px; border-radius: 8px; }
+        .header-title { font-size: 15px; font-weight: 700; }
+        .header-subtitle { font-size: 11px; opacity: 0.8; }
+        .header-actions { display: flex; gap: 8px; }
+        .hdr-btn {
+            padding: 8px 14px;
             border-radius: 8px;
-            font-size: 14px;
+            border: none;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
+        }
+        .hdr-btn-white { background: white; color: #1e3a8a; }
+        .hdr-btn-red   { background: #ef4444; color: white; }
+
+        /* ── MAIN ── */
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
         }
 
-        .nav-btn:hover {
-            background: #2563eb;
+        /* ── SECTION CARD ── */
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
-
-        .logout-btn {
-            background: #ef4444;
-        }
-
-        .logout-btn:hover {
-            background: #dc2626;
-        }
-
-        .section {
-            margin-bottom: 32px;
-        }
-
-        .section-title {
-            font-size: 20px;
+        .card-title {
+            font-size: 14px;
             font-weight: 700;
             color: #1e3a8a;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eff6ff;
         }
 
-        .users-table {
+        /* ── ADD USER FORM ── */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .form-group input,
+        .form-group select {
             width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1e293b;
+            background: #f8fafc;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+        }
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            background: #059669;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        /* ── USER TABLE ── */
+        /* ✅ THE FIX: Only the TABLE WRAPPER scrolls, not the page background */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;          /* ✅ horizontal scroll ONLY here */
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            min-width: 520px;          /* ✅ table has minimum width */
             border-collapse: collapse;
-            margin-top: 16px;
+            font-size: 13px;
         }
-
-        .users-table th {
-            background: #f1f5f9;
-            padding: 12px;
+        thead th {
+            background: #1e3a8a;
+            color: white;
+            padding: 11px 12px;
             text-align: left;
-            font-weight: 700;
-            color: #1e3a8a;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .users-table td {
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .role-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child  { border-radius: 0 10px 0 0; }
+        tbody tr { border-bottom: 1px solid #f1f5f9; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody td {
+            padding: 11px 12px;
+            color: #334155;
+            white-space: nowrap;
+        }
+
+        .badge {
             display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
         }
+        .badge-admin { background: #fef3c7; color: #92400e; }
+        .badge-staff { background: #dbeafe; color: #1e40af; }
 
-        .role-admin {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .role-staff {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .delete-btn {
+        .btn-delete {
+            padding: 5px 12px;
             background: #ef4444;
             color: white;
             border: none;
-            padding: 6px 12px;
             border-radius: 6px;
             font-size: 12px;
             cursor: pointer;
         }
+        .btn-delete:hover { background: #dc2626; }
+        .protected-label { color: #94a3b8; font-size: 12px; }
 
-        .delete-btn:hover {
-            background: #dc2626;
-        }
-
-        .status-message {
-            padding: 12px;
+        /* ── STATUS ── */
+        .status-msg {
+            padding: 12px 16px;
             border-radius: 8px;
-            margin-bottom: 16px;
-            text-align: center;
+            margin-bottom: 14px;
+            font-size: 13px;
             font-weight: 600;
             display: none;
         }
+        .status-success { background: #d1fae5; color: #065f46; border: 1.5px solid #059669; }
+        .status-error   { background: #fee2e2; color: #991b1b; border: 1.5px solid #ef4444; }
 
-        .status-success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 2px solid #10b981;
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
         }
-
-        .status-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 2px solid #ef4444;
-        }
-
-        .loading {
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px;
             text-align: center;
-            padding: 40px;
-            color: #64748b;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
-
-        @media (max-width: 640px) {
-            .header {
-                flex-direction: column;
-                gap: 16px;
-            }
-            
-            .users-table {
-                font-size: 12px;
-            }
-            
-            .users-table th, .users-table td {
-                padding: 8px;
-            }
-        }
+        .stat-number { font-size: 26px; font-weight: 800; color: #1e3a8a; }
+        .stat-label  { font-size: 11px; color: #64748b; margin-top: 2px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-left">
-                <img src="logo.png" alt="BPGT Logo" class="logo">
-                <div>
-                    <h1>Admin Dashboard</h1>
-                    <div class="subtitle">Manage Users & System</div>
-                </div>
-            </div>
-            <div class="nav-buttons">
-                <a href="app.html" class="nav-btn">📊 Data Entry</a>
-                <button class="nav-btn logout-btn" onclick="logout()">Logout</button>
+
+<!-- HEADER -->
+<div class="admin-header">
+    <div class="header-inner">
+        <div class="header-left">
+            <img src="bpgt-logo.png" alt="BPGT" class="header-logo"
+                 onerror="this.style.display='none'">
+            <div>
+                <div class="header-title">⚙️ Admin Dashboard</div>
+                <div class="header-subtitle" id="admin-name">Manage Users & System</div>
             </div>
         </div>
+        <div class="header-actions">
+            <button class="hdr-btn hdr-btn-white" onclick="goToApp()">📱 Data Entry</button>
+            <button class="hdr-btn hdr-btn-red"   onclick="logout()">⬅ Logout</button>
+        </div>
+    </div>
+</div>
 
-        <div class="status-message" id="status-message"></div>
+<!-- MAIN -->
+<div class="main">
 
-        <div class="section">
-            <div class="section-title">
-                <span>👥</span>
-                User Management
+    <div class="status-msg" id="status-msg"></div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-number" id="stat-total">—</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="stat-admins" style="color:#d97706;">—</div>
+            <div class="stat-label">Admins</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="stat-staff"  style="color:#059669;">—</div>
+            <div class="stat-label">Staff</div>
+        </div>
+    </div>
+
+    <!-- ADD USER -->
+    <div class="card">
+        <div class="card-title">➕ Add New User</div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="new-username" placeholder="e.g. jdoe"
+                       autocapitalize="none" autocorrect="off">
             </div>
-            
-            <div id="users-loading" class="loading">
-                ⏳ Loading users...
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="new-password" placeholder="Min. 6 chars">
             </div>
-            
-            <table class="users-table" id="users-table" style="display: none;">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="new-fullname" placeholder="e.g. Juan Dela Cruz">
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="new-role">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-add" onclick="addUser()">✅ Create Account</button>
+    </div>
+
+    <!-- USER LIST -->
+    <div class="card">
+        <div class="card-title">👥 User Accounts</div>
+
+        <!-- ✅ WRAPPER scrolls, not the page -->
+        <div class="table-wrapper">
+            <table id="user-table">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Username</th>
                         <th>Full Name</th>
                         <th>Role</th>
-                        <th>Created</th>
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="users-tbody">
+                <tbody id="user-table-body">
+                    <tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8;">Loading users...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script>
-        // Protect admin page
-        requireAdmin();
-        
-        // Load all users
-        async function loadUsers() {
-            try {
-                const url = CONFIG.AUTH_API_URL + '?action=getAllUsers';
-                const response = await fetch(url, {
-                    method: 'GET',
-                    redirect: 'follow'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    displayUsers(result.users);
-                } else {
-                    throw new Error('Failed to load users');
-                }
-            } catch (error) {
-                document.getElementById('users-loading').textContent = '❌ Error loading users';
-                console.error('Load users error:', error);
-            }
+</div><!-- end main -->
+
+<script src="auth.js"></script>
+<script src="config.js"></script>
+<script>
+    // ── PROTECTED ADMINS (cannot be deleted) ──
+    const PROTECTED = ['admin','cvicera','jdbelen'];
+
+    // ── INIT ──
+    window.addEventListener('load', () => {
+        const user = getCurrentUser();
+        if (!user || user.role !== 'admin') {
+            window.location.href = 'index.html';
+            return;
         }
-        
-        function displayUsers(users) {
-            const tbody = document.getElementById('users-tbody');
-            const loading = document.getElementById('users-loading');
-            const table = document.getElementById('users-table');
-            
-            loading.style.display = 'none';
-            table.style.display = 'table';
-            
-            tbody.innerHTML = '';
-            
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><strong>${user.username}</strong></td>
-                    <td>${user.fullName}</td>
-                    <td><span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span></td>
-                    <td>${user.createdAt || 'N/A'}</td>
-                    <td>
-                        ${user.role !== 'admin' ? `<button class="delete-btn" onclick="deleteUser('${user.username}')">Delete</button>` : '<em style="color: #64748b;">Protected</em>'}
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-        
-        async function deleteUser(username) {
-            if (!confirm(`Are you sure you want to delete user "${username}"?`)) {
+        document.getElementById('admin-name').textContent = user.fullName;
+        loadUsers();
+    });
+
+    function goToApp() { window.location.href = 'app.html'; }
+
+    // ── LOAD USERS ──
+    async function loadUsers() {
+        try {
+            const res  = await fetch(CONFIG.USERS_API_URL);
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+
+            const users  = data.users;
+            const admins = users.filter(u => u.role === 'admin').length;
+            document.getElementById('stat-total').textContent  = users.length;
+            document.getElementById('stat-admins').textContent = admins;
+            document.getElementById('stat-staff').textContent  = users.length - admins;
+
+            const tbody = document.getElementById('user-table-body');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8;">No users found</td></tr>';
                 return;
             }
-            
-            const statusMessage = document.getElementById('status-message');
-            
-            try {
-                const url = CONFIG.AUTH_API_URL + '?action=deleteUser&username=' + encodeURIComponent(username);
-                const response = await fetch(url, {
-                    method: 'GET',
-                    redirect: 'follow'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    statusMessage.textContent = '✅ User deleted successfully!';
-                    statusMessage.className = 'status-message status-success';
-                    statusMessage.style.display = 'block';
-                    
-                    // Reload users
-                    setTimeout(() => {
-                        loadUsers();
-                        statusMessage.style.display = 'none';
-                    }, 2000);
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                statusMessage.textContent = '❌ Error deleting user';
-                statusMessage.className = 'status-message status-error';
-                statusMessage.style.display = 'block';
-            }
+            tbody.innerHTML = users.map((u, i) => `
+                <tr>
+                    <td style="color:#94a3b8;">${i+1}</td>
+                    <td><strong>${u.username}</strong></td>
+                    <td>${u.fullName || '—'}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-staff'}">
+                        ${u.role === 'admin' ? '⭐ ADMIN' : '🔵 STAFF'}
+                    </span></td>
+                    <td>${PROTECTED.includes(u.username)
+                        ? '<span class="protected-label">🔒 Protected</span>'
+                        : `<button class="btn-delete" onclick="deleteUser('${u.username}')">🗑 Delete</button>`
+                    }</td>
+                </tr>`).join('');
+        } catch(e) {
+            showStatus('Failed to load users: ' + e.message, 'error');
         }
-        
-        // Load users on page load
-        window.addEventListener('load', loadUsers);
-    </script>
+    }
+
+    // ── ADD USER ──
+    async function addUser() {
+        const username = document.getElementById('new-username').value.trim().toLowerCase();
+        const password = document.getElementById('new-password').value.trim();
+        const fullName = document.getElementById('new-fullname').value.trim();
+        const role     = document.getElementById('new-role').value;
+
+        if (!username || !password || !fullName) {
+            showStatus('Please fill in all fields!', 'error'); return;
+        }
+        if (password.length < 6) {
+            showStatus('Password must be at least 6 characters!', 'error'); return;
+        }
+
+        try {
+            const params = new URLSearchParams({ action:'addUser', username, password, fullName, role });
+            const res  = await fetch(CONFIG.USERS_API_URL + '?' + params.toString());
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+            showStatus(`✅ User "${username}" created!`, 'success');
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('new-fullname').value = '';
+            loadUsers();
+        } catch(e) {
+            showStatus('Error: ' + e.message, 'error');
+        }
+    }
+
+    // ── DELETE USER ──
+    async function deleteUser(username) {
+        if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+        try {
+            const params = new URLSearchParams({ action:'deleteUser', username });
+            const res  = await fetch(CONFIG.USERS_API_URL + '?' + params.toString());
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+            showStatus(`✅ User "${username}" deleted.`, 'success');
+            loadUsers();
+        } catch(e) {
+            showStatus('Error: ' + e.message, 'error');
+        }
+    }
+
+    // ── STATUS ──
+    function showStatus(msg, type) {
+        const el = document.getElementById('status-msg');
+        el.textContent = msg;
+        el.className = 'status-msg status-' + type;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 4000);
+    }
+</script>
+
 </body>
 </html>
