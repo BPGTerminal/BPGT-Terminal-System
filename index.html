@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BPGT Terminal System</title>
-
-    <!-- PWA: Makes Chrome bar disappear when installed -->
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,211 +11,244 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#1e3a8a">
     <meta name="mobile-web-app-capable" content="yes">
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('service-worker.js')
-            .catch(e => console.log('SW:', e));
-        });
-      }
-    </script>
-
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         html, body {
-            width: 100%;
-            min-height: 100vh;
-            background: linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 50%, #1e40af 100%);
+            width: 100%; min-height: 100vh;
+            background: linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 60%, #1e40af 100%);
             font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
-
-        .login-wrapper {
-            width: 100%;
-            max-width: 420px;
-            padding: 20px;
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 28px;
-        }
+        .login-wrapper { width: 100%; max-width: 420px; padding: 24px 20px; }
+        .login-header { text-align: center; margin-bottom: 24px; }
         .login-logo {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            border: 4px solid rgba(255,255,255,0.4);
-            margin-bottom: 14px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            width: 96px; height: 96px; border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.35); margin-bottom: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3); object-fit: cover;
+            background: rgba(255,255,255,0.1);
         }
-        .login-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: white;
-            letter-spacing: 0.5px;
-        }
-        .login-subtitle {
-            font-size: 13px;
-            color: rgba(255,255,255,0.75);
-            margin-top: 4px;
-        }
-
+        .login-title { font-size: 18px; font-weight: 800; color: white; line-height: 1.3; }
+        .login-subtitle { font-size: 13px; color: rgba(255,255,255,0.72); margin-top: 5px; }
         .login-card {
-            background: white;
-            border-radius: 20px;
-            padding: 28px 24px;
+            background: white; border-radius: 20px; padding: 28px 24px 24px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-
         .form-group { margin-bottom: 18px; }
         .form-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
+            display: block; font-size: 11px; font-weight: 700; color: #64748b;
+            text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;
         }
         .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            color: #1e293b;
-            transition: border-color 0.2s;
-            background: #f8fafc;
+            width: 100%; padding: 13px 16px; border: 2px solid #e2e8f0;
+            border-radius: 10px; font-size: 16px; color: #1e293b;
+            background: #f8fafc; -webkit-appearance: none; transition: border-color 0.2s;
         }
-        .form-group input:focus {
-            outline: none;
-            border-color: #1e3a8a;
-            background: white;
-        }
-
+        .form-group input:focus { outline: none; border-color: #1e3a8a; background: white; }
         .login-btn {
-            width: 100%;
-            padding: 14px;
+            width: 100%; padding: 14px;
             background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 12px rgba(30,58,138,0.4);
-            transition: all 0.2s;
+            color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(30,58,138,0.4); margin-top: 4px;
         }
-        .login-btn:active { transform: scale(0.98); }
-
-        .login-links {
-            text-align: center;
-            margin-top: 16px;
-            font-size: 13px;
-            color: #64748b;
-        }
-        .login-links a { color: #1d4ed8; text-decoration: none; }
-
+        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
         .error-msg {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1.5px solid #ef4444;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: 13px;
-            margin-bottom: 14px;
-            display: none;
+            background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5;
+            border-radius: 8px; padding: 10px 14px; font-size: 13px;
+            margin-bottom: 16px; display: none;
         }
-
+        .login-links { text-align: center; margin-top: 18px; font-size: 13px; color: #94a3b8; }
+        .login-links a { color: #1d4ed8; text-decoration: none; font-weight: 600; }
         .footer-brand {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.45);
+            text-align: center; margin-top: 24px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
+        .pagong-img {
+            height: 36px; width: 36px; border-radius: 50%; object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .footer-text { font-size: 12px; color: rgba(255,255,255,0.45); }
+        .modal-overlay {
+            display: none; position: fixed; top:0; left:0;
+            width:100%; height:100%; background:rgba(0,0,0,0.5);
+            z-index:999; align-items:center; justify-content:center; padding:20px;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal-box {
+            background: white; border-radius: 16px; padding: 24px;
+            width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .modal-title { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-bottom: 16px; }
+        .modal-btn {
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
+        }
+        .modal-btn-primary { background: #1e3a8a; color: white; }
+        .modal-btn-cancel  { background: #f1f5f9; color: #475569; }
+        .modal-status { font-size:13px; padding:8px 12px; border-radius:8px; margin-top:10px; display:none; }
+        .modal-success { background:#d1fae5; color:#065f46; }
+        .modal-error   { background:#fee2e2; color:#991b1b; }
     </style>
 </head>
 <body>
 
+<!-- REGISTER MODAL -->
+<div class="modal-overlay" id="register-modal">
+    <div class="modal-box">
+        <div class="modal-title">➕ Create Account</div>
+        <div class="form-group"><label>Full Name</label>
+            <input type="text" id="reg-fullname" placeholder="e.g. Juan Dela Cruz"></div>
+        <div class="form-group"><label>Username</label>
+            <input type="text" id="reg-username" placeholder="e.g. jdelacruz" autocapitalize="none"></div>
+        <div class="form-group"><label>Password</label>
+            <input type="password" id="reg-password" placeholder="Min. 6 characters"></div>
+        <div class="modal-status" id="reg-status"></div>
+        <button class="modal-btn modal-btn-primary" onclick="doRegister()">✅ Create Account</button>
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('register-modal')">Cancel</button>
+    </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div class="modal-overlay" id="forgot-modal">
+    <div class="modal-box">
+        <div class="modal-title">🔑 Reset Password</div>
+        <div class="form-group"><label>Username</label>
+            <input type="text" id="forgot-username" placeholder="Enter your username" autocapitalize="none"></div>
+        <div class="form-group"><label>New Password</label>
+            <input type="password" id="forgot-newpass" placeholder="Min. 6 characters"></div>
+        <div class="modal-status" id="forgot-status"></div>
+        <button class="modal-btn modal-btn-primary" onclick="doReset()">🔑 Reset Password</button>
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('forgot-modal')">Cancel</button>
+    </div>
+</div>
+
+<!-- LOGIN -->
 <div class="login-wrapper">
     <div class="login-header">
-        <img src="bpgt-logo.png" alt="BPGT Logo" class="login-logo"
-             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%231e3a8a%22/><text y=%22.9em%22 font-size=%2240%22 x=%2250%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22>🚌</text></svg>'">
-        <div class="login-title">BROOKE'S POINT GRAND TERMINAL</div>
-        <div class="login-subtitle">Passenger & Revenue Monitoring System</div>
+        <img src="logo.png" alt="BPGT" class="login-logo"
+             onerror="this.style.padding='12px';this.style.background='rgba(255,255,255,0.15)';">
+        <div class="login-title">BROOKE'S POINT<br>GRAND TERMINAL</div>
+        <div class="login-subtitle">Passenger &amp; Revenue Monitoring System</div>
     </div>
-
     <div class="login-card">
         <div class="error-msg" id="error-msg"></div>
-
         <div class="form-group">
             <label>Username</label>
             <input type="text" id="username" placeholder="Enter your username"
                    autocomplete="username" autocapitalize="none" autocorrect="off">
         </div>
-
         <div class="form-group">
             <label>Password</label>
             <input type="password" id="password" placeholder="Enter your password"
                    autocomplete="current-password">
         </div>
-
-        <button class="login-btn" onclick="doLoginClick()">🔐 LOGIN</button>
-
+        <button class="login-btn" id="login-btn" onclick="doLoginClick()">🔐 LOGIN</button>
         <div class="login-links">
-            <a href="#" onclick="showRegister()">Create Account</a>
+            <a href="#" onclick="openModal('register-modal')">Create Account</a>
             &nbsp;|&nbsp;
-            <a href="#" onclick="showForgotPassword()">Forgot Password?</a>
+            <a href="#" onclick="openModal('forgot-modal')">Forgot Password?</a>
         </div>
     </div>
-
-    <div class="footer-brand">-=pagong=- 🐢 &nbsp;|&nbsp; BPGT Terminal System v4.5</div>
+    <div class="footer-brand">
+        <img src="pagong-logo.png" alt="pagong" class="pagong-img"
+             onerror="this.style.display='none'">
+        <span class="footer-text">-=PAGONG=- &nbsp;|&nbsp; BPGT Terminal System v4.5</span>
+    </div>
 </div>
 
+<script src="config.js"></script>
 <script src="auth.js"></script>
 <script>
-    // Allow Enter key to login
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js').catch(e => console.log('SW:',e));
+    }
+
     async function doLoginClick() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const errEl = document.getElementById('error-msg');
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errEl    = document.getElementById('error-msg');
+        const btn      = document.getElementById('login-btn');
 
-    if (!username || !password) {
-        errEl.textContent = '⚠️ Please enter username and password!';
-        errEl.style.display = 'block';
-        return;
+        if (!username || !password) {
+            errEl.textContent = '⚠️ Please enter your username and password.';
+            errEl.style.display = 'block';
+            return;
+        }
+        btn.textContent = '⏳ Logging in...';
+        btn.disabled = true;
+        errEl.style.display = 'none';
+
+        try {
+            const result = await login(username, password);
+            if (result.success) {
+                sessionStorage.setItem('bpgt_user', JSON.stringify(result.user));
+                window.location.href = result.user.role === 'admin' ? 'admin.html' : 'app.html';
+            } else {
+                errEl.textContent = '❌ ' + (result.message || 'Login failed. Check username and password.');
+                errEl.style.display = 'block';
+                btn.textContent = '🔐 LOGIN';
+                btn.disabled = false;
+            }
+        } catch(e) {
+            errEl.textContent = '❌ Connection error. Check internet and try again.';
+            errEl.style.display = 'block';
+            btn.textContent = '🔐 LOGIN';
+            btn.disabled = false;
+        }
     }
 
-    const btn = document.querySelector('.login-btn');
-    btn.textContent = '⏳ Logging in...';
-    btn.disabled = true;
-    errEl.style.display = 'none';
+    document.getElementById('password').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLoginClick();
+    });
+    document.getElementById('username').addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('password').focus();
+    });
 
-    const result = await login(username, password);
-
-    if (result.success) {
-        sessionStorage.setItem('bpgt_user', JSON.stringify(result.user));
-        window.location.href = result.user.role === 'admin' ? 'admin.html' : 'app.html';
-    } else {
-        errEl.textContent = '❌ ' + (result.message || 'Login failed. Check username and password.');
-        errEl.style.display = 'block';
-        btn.textContent = '🔐 LOGIN';
-        btn.disabled = false;
+    async function doRegister() {
+        const fullName = document.getElementById('reg-fullname').value.trim();
+        const username = document.getElementById('reg-username').value.trim().toLowerCase();
+        const password = document.getElementById('reg-password').value.trim();
+        if (!fullName || !username || !password) {
+            showModalStatus('reg-status','⚠️ Please fill in all fields.','error'); return;
+        }
+        if (password.length < 6) {
+            showModalStatus('reg-status','⚠️ Password must be at least 6 characters.','error'); return;
+        }
+        const result = await register(username, password, fullName);
+        if (result.success) {
+            showModalStatus('reg-status','✅ Account created! You can now log in.','success');
+            setTimeout(() => closeModal('register-modal'), 2000);
+        } else {
+            showModalStatus('reg-status','❌ ' + (result.message || 'Registration failed.'),'error');
+        }
     }
-}
 
-document.getElementById('password').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLoginClick();
-});
-document.getElementById('username').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('password').focus();
-});
+    async function doReset() {
+        const username = document.getElementById('forgot-username').value.trim().toLowerCase();
+        const newpass  = document.getElementById('forgot-newpass').value.trim();
+        if (!username || !newpass) {
+            showModalStatus('forgot-status','⚠️ Please fill in all fields.','error'); return;
+        }
+        if (newpass.length < 6) {
+            showModalStatus('forgot-status','⚠️ Password must be at least 6 characters.','error'); return;
+        }
+        const result = await resetPassword(username, newpass);
+        if (result.success) {
+            showModalStatus('forgot-status','✅ Password reset! You can now log in.','success');
+            setTimeout(() => closeModal('forgot-modal'), 2000);
+        } else {
+            showModalStatus('forgot-status','❌ ' + (result.message || 'Reset failed.'),'error');
+        }
+    }
+
+    function openModal(id)  { document.getElementById(id).classList.add('visible'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('visible'); }
+    function showModalStatus(id, msg, type) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.className = 'modal-status ' + (type === 'success' ? 'modal-success' : 'modal-error');
+        el.style.display = 'block';
+    }
 </script>
-
 </body>
 </html>
