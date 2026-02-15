@@ -2,374 +2,193 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#1e3a8a">
-    <title>Brooke's Point Grand Terminal - Login</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BPGT Terminal System</title>
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    <!-- PWA: Makes Chrome bar disappear when installed -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BPGT">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('service-worker.js')
+            .catch(e => console.log('SW:', e));
+        });
+      }
+    </script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            width: 100%;
             min-height: 100vh;
+            background: linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 50%, #1e40af 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
             padding: 20px;
-            position: relative;
-            overflow: hidden;
         }
 
-        /* Beautiful rainbow mountain background */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            z-index: -2;
+        .login-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .login-logo {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.4);
+            margin-bottom: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .login-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+        .login-subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
+            margin-top: 4px;
         }
 
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('rainbow-mountain.jpg');
-            background-size: cover;
-            background-position: center bottom;
-            opacity: 0.15;
-            z-index: -1;
-        }
-
-        .login-container {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px 24px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-            position: relative;
         }
 
-        .logo {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 24px;
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
             display: block;
-        }
-
-        h1 {
-            color: #1e3a8a;
-            font-size: 28px;
-            text-align: center;
-            margin-bottom: 8px;
+            font-size: 12px;
             font-weight: 700;
-        }
-
-        .subtitle {
             color: #64748b;
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 32px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
         }
-
-        .status-message {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            text-align: center;
-            display: none;
-        }
-
-        .status-error {
-            background: #fee;
-            color: #c00;
-            border: 1px solid #fcc;
-        }
-
-        .status-success {
-            background: #efe;
-            color: #060;
-            border: 1px solid #cfc;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            color: #334155;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-
-        input {
+        .form-group input {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
-            transition: all 0.3s;
+            color: #1e293b;
+            transition: border-color 0.2s;
+            background: #f8fafc;
         }
-
-        input:focus {
+        .form-group input:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #1e3a8a;
+            background: white;
         }
 
         .login-btn {
             width: 100%;
             padding: 14px;
-            background: #1e3a8a;
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(30,58,138,0.4);
+            transition: all 0.2s;
         }
+        .login-btn:active { transform: scale(0.98); }
 
-        .login-btn:hover {
-            background: #1e40af;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
-        }
-
-        .login-btn:active {
-            transform: translateY(0);
-        }
-
-        .login-btn:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .links {
-            margin-top: 24px;
+        .login-links {
             text-align: center;
-            font-size: 14px;
-        }
-
-        .links a {
-            color: #3b82f6;
-            text-decoration: none;
-            margin: 0 12px;
-            transition: color 0.3s;
-        }
-
-        .links a:hover {
-            color: #1e40af;
-            text-decoration: underline;
-        }
-
-        .links .separator {
-            color: #cbd5e1;
-        }
-
-        /* Footer with turtle logo */
-        .footer {
-            margin-top: 32px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-            text-align: center;
-        }
-
-        .footer-logo {
-            width: 40px;
-            height: 40px;
-            margin: 0 auto 8px;
-            display: block;
-            opacity: 0.8;
-            transition: opacity 0.3s;
-        }
-
-        .footer-logo:hover {
-            opacity: 1;
-        }
-
-        .footer-text {
+            margin-top: 16px;
+            font-size: 13px;
             color: #64748b;
+        }
+        .login-links a { color: #1d4ed8; text-decoration: none; }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1.5px solid #ef4444;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .footer-brand {
+            text-align: center;
+            margin-top: 20px;
             font-size: 12px;
-            margin-bottom: 4px;
-        }
-
-        .watermark {
-            color: #94a3b8;
-            font-size: 11px;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 1px;
-        }
-
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 30px 24px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .logo {
-                width: 100px;
-                height: 100px;
-            }
+            color: rgba(255,255,255,0.45);
         }
     </style>
-    html
-<!-- PWA MANIFEST - Makes app installable -->
-<link rel="manifest" href="manifest.json">
-
-<!-- iOS / Safari support -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="BPGT">
-<link rel="apple-touch-icon" href="icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
-
-<!-- Android / Chrome theme color -->
-<meta name="theme-color" content="#1e3a8a">
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- PWA SERVICE WORKER REGISTRATION -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/BPGT-Terminal-System/service-worker.js')
-        .then(reg => console.log('✅ BPGT PWA ready'))
-        .catch(err => console.log('Service worker failed:', err));
-    });
-  }
-</script>
-    ```
-
 </head>
 <body>
-    <div class="login-container">
-        <img src="logo.png" alt="BPGT Logo" class="logo">
-        <h1>BROOKE'S POINT GRAND TERMINAL</h1>
-        <p class="subtitle">Passenger Data Collection System</p>
 
-        <div id="status-message" class="status-message"></div>
+<div class="login-wrapper">
+    <div class="login-header">
+        <img src="bpgt-logo.png" alt="BPGT Logo" class="login-logo"
+             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%231e3a8a%22/><text y=%22.9em%22 font-size=%2240%22 x=%2250%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22>🚌</text></svg>'">
+        <div class="login-title">BROOKE'S POINT GRAND TERMINAL</div>
+        <div class="login-subtitle">Passenger & Revenue Monitoring System</div>
+    </div>
 
-        <form id="login-form">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    required 
-                    autocomplete="username"
-                    placeholder="Enter your username"
-                    autofocus
-                >
-            </div>
+    <div class="login-card">
+        <div class="error-msg" id="error-msg"></div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    required 
-                    autocomplete="current-password"
-                    placeholder="Enter your password"
-                >
-            </div>
-
-            <button type="submit" class="login-btn" id="login-btn">
-                🔐 LOGIN
-            </button>
-        </form>
-
-        <div class="links">
-            <a href="register.html">Create Account</a>
-            <span class="separator">|</span>
-            <a href="reset-password.html">Forgot Password?</a>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter your username"
+                   autocomplete="username" autocapitalize="none" autocorrect="off">
         </div>
 
-        <div class="footer">
-            <img src="pagong-logo.png" alt="Pagong" class="footer-logo">
-            <p class="watermark">-=pagong=-</p>
-            <p class="footer-text">Free & Open Source</p>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter your password"
+                   autocomplete="current-password">
+        </div>
+
+        <button class="login-btn" onclick="handleLogin()">🔐 LOGIN</button>
+
+        <div class="login-links">
+            <a href="#" onclick="showRegister()">Create Account</a>
+            &nbsp;|&nbsp;
+            <a href="#" onclick="showForgotPassword()">Forgot Password?</a>
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="auth.js"></script>
-    <script>
-        const loginForm = document.getElementById('login-form');
-        const statusMessage = document.getElementById('status-message');
-        const loginBtn = document.getElementById('login-btn');
+    <div class="footer-brand">-=pagong=- 🐢 &nbsp;|&nbsp; BPGT Terminal System v4.5</div>
+</div>
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            loginBtn.disabled = true;
-            loginBtn.textContent = '⏳ Logging in...';
-            statusMessage.style.display = 'none';
-            
-            try {
-                const result = await login(username, password);
-                
-                if (result.success) {
-                    sessionStorage.setItem('bpgt_user', JSON.stringify(result.user));
-                    
-                    statusMessage.textContent = '✅ Login successful! Redirecting...';
-                    statusMessage.className = 'status-message status-success';
-                    statusMessage.style.display = 'block';
-                    
-                    setTimeout(() => {
-                        if (result.user.role === 'admin') {
-                            window.location.href = 'admin.html';
-                        } else {
-                            window.location.href = 'app.html';
-                        }
-                    }, 1000);
-                } else {
-                    throw new Error(result.message || 'Login failed');
-                }
-            } catch (error) {
-                statusMessage.textContent = '❌ ' + (error.message || 'Login failed. Please check your credentials.');
-                statusMessage.className = 'status-message status-error';
-                statusMessage.style.display = 'block';
-                
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '🔐 LOGIN';
-            }
-        });
+<script src="auth.js"></script>
+<script>
+    // Allow Enter key to login
+    document.getElementById('password').addEventListener('keydown', e => {
+        if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('username').addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('password').focus();
+    });
+</script>
 
-        // Check if already logged in
-        if (isLoggedIn()) {
-            const user = getCurrentUser();
-            if (user.role === 'admin') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'app.html';
-            }
-        }
-    </script>
 </body>
 </html>
