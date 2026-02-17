@@ -125,8 +125,8 @@
 <!-- LOGIN -->
 <div class="login-wrapper">
     <div class="login-header">
-        <img src="logo.png" alt="BPGT" class="login-logo"
-             onerror="this.style.padding='12px';this.style.background='rgba(255,255,255,0.15)';">
+        <img src="bpgt-logo.png" alt="BPGT" class="login-logo" id="bpgt-logo"
+             onerror="tryNextLogo(this)">
         <div class="login-title">BROOKE'S POINT<br>GRAND TERMINAL</div>
         <div class="login-subtitle">Passenger &amp; Revenue Monitoring System</div>
     </div>
@@ -163,6 +163,19 @@
         navigator.serviceWorker.register('service-worker.js').catch(e => console.log('SW:',e));
     }
 
+
+    function tryNextLogo(img) {
+        const fallbacks = ['bpgt-logo.png','Logo.png','BPGT-logo.png','bpgt_logo.png','icon-192.png'];
+        const tried = parseInt(img.dataset.tried || '0');
+        if (tried < fallbacks.length) {
+            img.dataset.tried = tried + 1;
+            img.src = fallbacks[tried];
+        } else {
+            img.style.padding = '12px';
+            img.style.background = 'rgba(255,255,255,0.15)';
+            img.onerror = null;
+        }
+    }
     async function doLoginClick() {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
