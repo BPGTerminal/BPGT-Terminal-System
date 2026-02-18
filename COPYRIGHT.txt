@@ -1,0 +1,82 @@
+═══════════════════════════════════════════════════════════════
+BPGT TERMINAL SYSTEM
+Copyright © 2026 Joey S. Heredero
+All Rights Reserved
+═══════════════════════════════════════════════════════════════
+
+Developer:        Joey S. Heredero
+Location:         Brooke's Point, Palawan, Philippines
+First Published:  February 2026
+Current Version:  4.5
+
+═══════════════════════════════════════════════════════════════
+INTELLECTUAL PROPERTY NOTICE
+═══════════════════════════════════════════════════════════════
+
+This software and its source code, including but not limited to:
+- Web application interface
+- Database structures
+- Business logic and algorithms
+- User interface designs
+- Documentation and guides
+- Power BI dashboards and templates
+
+are the exclusive intellectual property of Joey S. Heredero.
+
+═══════════════════════════════════════════════════════════════
+USAGE RESTRICTIONS
+═══════════════════════════════════════════════════════════════
+
+No part of this system may be:
+- Reproduced, copied, or duplicated
+- Modified, adapted, or derived from
+- Distributed, sold, or licensed
+- Reverse engineered or decompiled
+- Used in competing products or services
+
+Without prior written permission from the copyright holder.
+
+═══════════════════════════════════════════════════════════════
+AUTHORIZED USE
+═══════════════════════════════════════════════════════════════
+
+This system is authorized for use by:
+- Brooke's Point Grand Terminal (BPGT)
+- Municipal Government of Brooke's Point, Palawan
+- Authorized personnel with valid user accounts
+
+═══════════════════════════════════════════════════════════════
+CONTACT
+═══════════════════════════════════════════════════════════════
+
+For licensing inquiries or permission requests:
+Developer: Joey S. Heredero
+Email:      joeyherederopal@gmail.com
+Mobile:     09468206576
+System:    BPGT Terminal System
+Location:  Brooke's Point, Palawan, Philippines
+
+═══════════════════════════════════════════════════════════════
+LEGAL PROTECTION
+═══════════════════════════════════════════════════════════════
+
+This software is protected under:
+- Philippine Copyright Law (Presidential Decree 49)
+- Intellectual Property Code of the Philippines (RA 8293)
+- International copyright treaties
+
+Unauthorized use, reproduction, or distribution may result in:
+- Civil liability for damages
+- Criminal prosecution under Philippine law
+- Injunctive relief and cease-and-desist orders
+
+═══════════════════════════════════════════════════════════════
+TIMESTAMP PROOF
+═══════════════════════════════════════════════════════════════
+
+This copyright notice was created on February 17, 2026.
+
+GitHub repository commit history serves as additional proof of
+creation date and authorship.
+
+═══════════════════════════════════════════════════════════════
