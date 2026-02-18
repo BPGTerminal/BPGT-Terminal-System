@@ -51,8 +51,34 @@ const GROUPS = {
     'TRICYCLE':    ['TODA'],
     'JEEP':        ['N/A'], 'MULTICAB':['N/A'], 'FILCAB':['N/A']
 };
-const INTER = ["BROOKE'S POINT","PPC","ABORLAN","NARRA","S.ESPAÑOLA","QUEZON","BATARAZA","RIO-TUBA","BULILUYAN","SICUD","RIZAL"];
-const INTRA = ['POBLACION','TUBTUB','PSU','MAINIT','IMULNOD','PANGOBILIAN'];
+const INTER = [
+    "BP",        // Brooke's Point
+    "PPC",       // Puerto Princesa
+    "Ab",        // Aborlan
+    "NR",        // Narra
+    "SE",        // Sof. Española
+    "Qz",        // Quezon
+    "Bt",        // Bataraza
+    "Brt",       // Rio-Tuba
+    "Bby",       // Buliluyan
+    "Rsc",       // Sicud
+    "Rz"         // Rizal
+];
+
+const INTRA = [
+    "Pb1",       // Poblacion1
+    "Pb2",       // Poblacion2
+    "Tub",       // Tubtub
+    "PSU",       // PSU
+    "Mnt",       // Mainit
+    "Imd",       // Imulnod
+    "Png",       // Pangobilian
+    "Blc",       // Balacan
+    "Prt",       // Paratungon
+    "Unp",       // Unitop
+    "Mkt",       // Market
+    "PLCo"        // PALECO
+];
 
 // ── VEHICLE REGISTRY ──
 let registry = {};
