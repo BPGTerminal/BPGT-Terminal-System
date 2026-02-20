@@ -3,49 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPGT Admin - User Approval</title>
+    <title>BPGT Admin Dashboard</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial; background: #f1f5f9; }
-        .header { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); color: white; padding: 14px 16px; }
-        .main { max-width: 900px; margin: 20px auto; padding: 16px; }
-        .card { background: white; border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-        .card-title { font-size: 13px; font-weight: 700; color: #1e3a8a; margin-bottom: 14px; text-transform: uppercase; }
-        
-        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%; min-height: 100vh;
+            background: #f1f5f9;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 14px; color: #1e293b;
+            overflow-x: hidden;
+        }
+        /* HEADER */
+        .admin-header {
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            color: white; padding: 14px 16px;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .header-inner {
+            display: flex; align-items: center; justify-content: space-between;
+            max-width: 900px; margin: 0 auto;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; }
+        .header-title { font-size: 15px; font-weight: 700; }
+        .header-sub   { font-size: 11px; opacity: 0.8; }
+        .header-actions { display: flex; gap: 8px; }
+        .hdr-btn {
+            padding: 8px 14px; border-radius: 8px; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+        }
+        .hdr-white { background: white; color: #1e3a8a; }
+        .hdr-red   { background: #ef4444; color: white; }
+        /* MAIN */
+        .main { max-width: 900px; margin: 0 auto; padding: 16px; }
+        /* STATS */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 10px; margin-bottom: 18px;
+        }
+        .stat-card {
+            background: white; border-radius: 12px; padding: 14px;
+            text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .stat-number { font-size: 28px; font-weight: 800; color: #1e3a8a; }
+        .stat-approved { color: #059669; }
+        .stat-pending  { color: #d97706; }
+        .stat-rejected { color: #ef4444; }
+        .stat-label  { font-size: 11px; color: #64748b; margin-top: 2px; }
+        /* CARD */
+        .card {
+            background: white; border-radius: 14px; padding: 18px;
+            margin-bottom: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 13px; font-weight: 700; color: #1e3a8a;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 14px; padding-bottom: 10px;
+            border-bottom: 2px solid #eff6ff;
+        }
+        /* TABLE - FIXED SCROLL */
+        .table-wrapper {
+            width: 100%; 
+            overflow-x: auto; /* Scroll only the table */
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px; border: 1px solid #e2e8f0;
+        }
+        table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 13px; }
+        thead th {
+            background: #1e3a8a; color: white;
+            padding: 11px 12px; text-align: left;
+            font-size: 12px; font-weight: 600; white-space: nowrap;
+        }
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child  { border-radius: 0 10px 0 0; }
+        tbody tr { border-bottom: 1px solid #f1f5f9; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody td { padding: 11px 12px; color: #334155; white-space: nowrap; }
+        .badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 700;
+        }
+        .badge-admin { background: #fef3c7; color: #92400e; }
+        .badge-staff { background: #dbeafe; color: #1e40af; }
         .badge-approved { background: #d1fae5; color: #065f46; }
         .badge-pending { background: #fef3c7; color: #92400e; }
         .badge-rejected { background: #fee2e2; color: #991b1b; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        thead th { background: #1e3a8a; color: white; padding: 10px; text-align: left; font-size: 12px; }
-        tbody td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
-        tbody tr:hover { background: #f8fafc; }
-        
-        .btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; margin-right: 4px; font-weight: 600; }
+        .btn {
+            padding: 5px 10px; border: none; border-radius: 6px;
+            font-size: 11px; cursor: pointer; margin-right: 4px; font-weight: 600;
+        }
         .btn-approve { background: #059669; color: white; }
-        .btn-reject { background: #ef4444; color: white; }
-        .btn-delete { background: #94a3b8; color: white; }
-        
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-        .stat-card { background: white; border-radius: 10px; padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-        .stat-number { font-size: 26px; font-weight: 800; }
-        .stat-approved { color: #059669; }
-        .stat-pending { color: #d97706; }
-        .stat-rejected { color: #ef4444; }
-        .stat-label { font-size: 11px; color: #64748b; margin-top: 4px; }
+        .btn-reject  { background: #ef4444; color: white; }
+        .btn-delete  { background: #94a3b8; color: white; }
+        .protected { color: #94a3b8; font-size: 12px; }
+        /* STATUS */
+        .status-msg {
+            padding: 12px 16px; border-radius: 8px;
+            margin-bottom: 14px; font-size: 13px;
+            font-weight: 600; display: none;
+        }
+        .status-success { background: #d1fae5; color: #065f46; border: 1.5px solid #059669; }
+        .status-error   { background: #fee2e2; color: #991b1b; border: 1.5px solid #ef4444; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <strong>⚙️ ADMIN DASHBOARD - User Approval System</strong>
+<div class="admin-header">
+    <div class="header-inner">
+        <div class="header-left">
+            <img src="bpgt-logo.png" alt="BPGT" class="header-logo"
+                 onerror="this.style.display='none'">
+            <div>
+                <div class="header-title">⚙️ Admin Dashboard</div>
+                <div class="header-sub" id="admin-name">User Management & Approval</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="hdr-btn hdr-white" onclick="window.location.href='app.html'">📱 Data Entry</button>
+            <button class="hdr-btn hdr-red"   onclick="logout()">⬅ Logout</button>
+        </div>
+    </div>
 </div>
 
 <div class="main">
-    
-    <!-- Stats -->
-    <div class="stats">
+
+    <div class="status-msg" id="status-msg"></div>
+
+    <!-- STATS -->
+    <div class="stats-row">
         <div class="stat-card">
             <div class="stat-number" id="stat-total">—</div>
             <div class="stat-label">Total Users</div>
@@ -64,23 +151,28 @@
         </div>
     </div>
 
-    <!-- User List -->
+    <!-- USER LIST -->
     <div class="card">
         <div class="card-title">👥 User Accounts & Approval</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Full Name</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="user-tbody">
-                <tr><td colspan="5" style="text-align:center;padding:20px;">Loading...</td></tr>
-            </tbody>
-        </table>
+        <div class="table-wrapper">
+            <table id="user-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-tbody">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">
+                        Loading users...
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -89,115 +181,143 @@
 <script src="auth.js"></script>
 <script>
 
-requireAdmin();
+    // Protected admins — cannot be deleted
+    const PROTECTED = ['admin','cvicera','jdbelen'];
 
-const PROTECTED = ['admin', 'cvicera', 'jdbelen'];
-
-window.addEventListener('load', loadUsers);
-
-async function loadUsers() {
-    try {
-        const url = CONFIG.AUTH_API_URL + '?action=getAllUsers';
-        const res = await fetch(url, { redirect: 'follow' });
-        const data = await res.json();
-        
-        if (!data.success) throw new Error(data.message);
-        
-        const users = data.users || [];
-        
-        // Calculate stats
-        const approved = users.filter(u => u.status === 'approved').length;
-        const pending = users.filter(u => u.status === 'pending').length;
-        const rejected = users.filter(u => u.status === 'rejected').length;
-        
-        document.getElementById('stat-total').textContent = users.length;
-        document.getElementById('stat-approved').textContent = approved;
-        document.getElementById('stat-pending').textContent = pending;
-        document.getElementById('stat-rejected').textContent = rejected;
-        
-        // Render table
-        const tbody = document.getElementById('user-tbody');
-        if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;">No users</td></tr>';
+    // ── INIT ──
+    window.addEventListener('load', () => {
+        const user = getCurrentUser();
+        if (!user || user.role !== 'admin') {
+            window.location.href = 'index.html';
             return;
         }
-        
-        tbody.innerHTML = users.map(u => {
-            const status = u.status || 'approved';
-            const badgeClass = status === 'approved' ? 'badge-approved' : 
-                              status === 'pending' ? 'badge-pending' : 'badge-rejected';
-            
-            let actions = '';
-            if (PROTECTED.includes(u.username)) {
-                actions = '<span style="color:#94a3b8;font-size:12px;">🔒 Protected</span>';
-            } else if (status === 'pending') {
-                actions = `
-                    <button class="btn btn-approve" onclick="approveUser('${u.username}')">✅ Approve</button>
-                    <button class="btn btn-reject" onclick="rejectUser('${u.username}')">❌ Reject</button>
-                `;
-            } else if (status === 'approved') {
-                actions = `<button class="btn btn-delete" onclick="deleteUser('${u.username}')">🗑 Delete</button>`;
-            } else {
-                actions = `<button class="btn btn-delete" onclick="deleteUser('${u.username}')">🗑 Delete</button>`;
+        document.getElementById('admin-name').textContent = '👤 ' + user.fullName;
+        loadUsers();
+    });
+
+    // ── LOAD USERS ──
+    async function loadUsers() {
+        try {
+            const url  = CONFIG.USERS_API_URL + '?action=getAllUsers';
+            const res  = await fetch(url, { redirect: 'follow' });
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.message || 'Failed to load');
+
+            const users    = data.users || [];
+            const approved = users.filter(u => (u.status || 'approved') === 'approved').length;
+            const pending  = users.filter(u => u.status === 'pending').length;
+            const rejected = users.filter(u => u.status === 'rejected').length;
+
+            document.getElementById('stat-total').textContent    = users.length;
+            document.getElementById('stat-approved').textContent = approved;
+            document.getElementById('stat-pending').textContent  = pending;
+            document.getElementById('stat-rejected').textContent = rejected;
+
+            const tbody = document.getElementById('user-tbody');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">No users found</td></tr>';
+                return;
             }
-            
-            return `
-                <tr>
-                    <td><strong>${u.username}</strong></td>
-                    <td>${u.fullName || '—'}</td>
-                    <td>${u.role === 'admin' ? '⭐ ADMIN' : '🔵 STAFF'}</td>
-                    <td><span class="status-badge ${badgeClass}">${status.toUpperCase()}</span></td>
-                    <td>${actions}</td>
-                </tr>
-            `;
-        }).join('');
-        
-    } catch(e) {
-        alert('Failed to load users: ' + e.message);
-    }
-}
 
-async function approveUser(username) {
-    if (!confirm(`Approve ${username}? They will be able to log in.`)) return;
-    try {
-        const url = `${CONFIG.AUTH_API_URL}?action=approveUser&username=${encodeURIComponent(username)}`;
-        const res = await fetch(url, { redirect: 'follow' });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message);
-        alert(`✅ ${username} approved!`);
-        loadUsers();
-    } catch(e) {
-        alert('Error: ' + e.message);
-    }
-}
+            tbody.innerHTML = users.map((u, i) => {
+                const status = u.status || 'approved';
+                const statusBadge = status === 'approved' ? 'badge-approved' : 
+                                   status === 'pending' ? 'badge-pending' : 'badge-rejected';
+                
+                let actionHtml = '';
+                if (PROTECTED.includes(u.username)) {
+                    actionHtml = '<span class="protected">🔒 Protected</span>';
+                } else if (status === 'pending') {
+                    actionHtml = `
+                        <button class="btn btn-approve" onclick="approveUser('${u.username}')">✅ Approve</button>
+                        <button class="btn btn-reject" onclick="rejectUser('${u.username}')">❌ Reject</button>
+                    `;
+                } else {
+                    actionHtml = `<button class="btn btn-delete" onclick="deleteUser('${u.username}')">🗑 Delete</button>`;
+                }
+                
+                return `
+                    <tr>
+                        <td style="color:#94a3b8;">${i + 1}</td>
+                        <td><strong>${u.username}</strong></td>
+                        <td>${u.fullName || '—'}</td>
+                        <td>
+                            <span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-staff'}">
+                                ${u.role === 'admin' ? '⭐ ADMIN' : '🔵 STAFF'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${statusBadge}">
+                                ${status.toUpperCase()}
+                            </span>
+                        </td>
+                        <td>${actionHtml}</td>
+                    </tr>
+                `;
+            }).join('');
 
-async function rejectUser(username) {
-    if (!confirm(`Reject ${username}? They will NOT be able to log in.`)) return;
-    try {
-        const url = `${CONFIG.AUTH_API_URL}?action=rejectUser&username=${encodeURIComponent(username)}`;
-        const res = await fetch(url, { redirect: 'follow' });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message);
-        alert(`❌ ${username} rejected.`);
-        loadUsers();
-    } catch(e) {
-        alert('Error: ' + e.message);
+        } catch(e) {
+            showStatus('❌ Failed to load users: ' + e.message, 'error');
+        }
     }
-}
 
-async function deleteUser(username) {
-    if (!confirm(`Delete ${username} permanently?`)) return;
-    try {
-        const url = `${CONFIG.AUTH_API_URL}?action=deleteUser&username=${encodeURIComponent(username)}`;
-        const res = await fetch(url, { redirect: 'follow' });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message);
-        alert(`🗑 ${username} deleted.`);
-        loadUsers();
-    } catch(e) {
-        alert('Error: ' + e.message);
+    // ── APPROVE USER ──
+    async function approveUser(username) {
+        if (!confirm(`Approve ${username}?\n\nThey will be able to log in and submit data.`)) return;
+        try {
+            const url  = `${CONFIG.USERS_API_URL}?action=approveUser&username=${encodeURIComponent(username)}`;
+            const res  = await fetch(url, { redirect: 'follow' });
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.message);
+            showStatus(`✅ ${username} approved!`, 'success');
+            loadUsers();
+        } catch(e) {
+            showStatus('❌ Error: ' + e.message, 'error');
+        }
     }
-}
+
+    // ── REJECT USER ──
+    async function rejectUser(username) {
+        if (!confirm(`Reject ${username}?\n\nThey will NOT be able to log in.`)) return;
+        try {
+            const url  = `${CONFIG.USERS_API_URL}?action=rejectUser&username=${encodeURIComponent(username)}`;
+            const res  = await fetch(url, { redirect: 'follow' });
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.message);
+            showStatus(`❌ ${username} rejected`, 'success');
+            loadUsers();
+        } catch(e) {
+            showStatus('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    // ── DELETE USER ──
+    async function deleteUser(username) {
+        if (!confirm(`Delete user "${username}"?\n\nThis cannot be undone!`)) return;
+        try {
+            const url  = `${CONFIG.USERS_API_URL}?action=deleteUser&username=${encodeURIComponent(username)}`;
+            const res  = await fetch(url, { redirect: 'follow' });
+            const data = await res.json();
+
+            if (!data.success) throw new Error(data.message);
+            showStatus(`✅ User "${username}" deleted.`, 'success');
+            loadUsers();
+        } catch(e) {
+            showStatus('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    // ── STATUS ──
+    function showStatus(msg, type) {
+        const el = document.getElementById('status-msg');
+        el.textContent = msg;
+        el.className   = 'status-msg status-' + type;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
 
 </script>
 </body>
