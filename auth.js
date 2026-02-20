@@ -1,68 +1,80 @@
-// BPGT Authentication Library - FIXED VERSION
+// BPGT AUTHENTICATION - WITH ADMIN APPROVAL SYSTEM
+// Users must be approved by admin before they can log in
 
-// Login function - WORKING!
+const AUTH_SHEET_ID = '13GnoMCTLy3iIYz--k2itiEzD5FqsJPudHnRkexgiySI';
+
+// Admin login
 async function login(username, password) {
     try {
-        const url = CONFIG.AUTH_API_URL + '?action=login&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password);
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
+        const url = `${CONFIG.AUTH_API_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+        const response = await fetch(url, { redirect: 'follow' });
         const data = await response.json();
+        
+        if (data.success) {
+            // Check if account is approved
+            if (data.user.status === 'pending') {
+                return {
+                    success: false,
+                    message: '⏳ Your account is pending admin approval. Please wait for approval before logging in.'
+                };
+            }
+            
+            if (data.user.status === 'rejected') {
+                return {
+                    success: false,
+                    message: '❌ Your account has been rejected. Contact admin for details.'
+                };
+            }
+            
+            // Only approved users can proceed
+            return data;
+        }
         return data;
     } catch (error) {
-        console.error('Login error:', error);
-        return { success: false, message: 'Connection error' };
+        return { success: false, message: 'Connection error. Please check your internet.' };
     }
 }
 
-// Register function - WORKING!
+// Register - now creates PENDING account
 async function register(username, password, fullName) {
     try {
-        const url = CONFIG.AUTH_API_URL + '?action=register&username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password) + '&fullName=' + encodeURIComponent(fullName);
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
+        const url = `${CONFIG.AUTH_API_URL}?action=register&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&fullName=${encodeURIComponent(fullName)}`;
+        const response = await fetch(url, { redirect: 'follow' });
         const data = await response.json();
+        
+        if (data.success) {
+            return {
+                success: true,
+                message: '✅ Account created! Your account is pending admin approval. You will be notified when approved.'
+            };
+        }
         return data;
     } catch (error) {
-        console.error('Register error:', error);
-        return { success: false, message: 'Connection error' };
+        return { success: false, message: 'Registration failed. Please try again.' };
     }
 }
 
-// Reset password function
+// Reset password
 async function resetPassword(username, newPassword) {
     try {
-        const url = CONFIG.AUTH_API_URL + '?action=resetPassword&username=' + encodeURIComponent(username) + '&newPassword=' + encodeURIComponent(newPassword);
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
-        const data = await response.json();
-        return data;
+        const url = `${CONFIG.AUTH_API_URL}?action=resetPassword&username=${encodeURIComponent(username)}&newPassword=${encodeURIComponent(newPassword)}`;
+        const response = await fetch(url, { redirect: 'follow' });
+        return await response.json();
     } catch (error) {
-        console.error('Reset password error:', error);
-        return { success: false, message: 'Connection error' };
+        return { success: false, message: 'Reset failed. Please try again.' };
     }
 }
 
-// Check if user is logged in
+// Check if logged in
 function isLoggedIn() {
-    return sessionStorage.getItem('bpgt_user') !== null;
+    const user = sessionStorage.getItem('bpgt_user');
+    return user !== null;
 }
 
 // Get current user
 function getCurrentUser() {
-    const userStr = sessionStorage.getItem('bpgt_user');
-    return userStr ? JSON.parse(userStr) : null;
+    const userData = sessionStorage.getItem('bpgt_user');
+    return userData ? JSON.parse(userData) : null;
 }
 
 // Logout
@@ -71,17 +83,17 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-// Require login (call this on protected pages)
+// Require login (for protected pages)
 function requireLogin() {
     if (!isLoggedIn()) {
         window.location.href = 'index.html';
     }
 }
 
-// Require admin (call this on admin pages)
+// Require admin (for admin page)
 function requireAdmin() {
     const user = getCurrentUser();
     if (!user || user.role !== 'admin') {
-        window.location.href = 'app.html';
+        window.location.href = 'index.html';
     }
 }
