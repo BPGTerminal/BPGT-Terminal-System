@@ -5,6 +5,9 @@
 
 requireLogin();
 
+// SECRET KEY for QR validation
+const SECRET_KEY = "BP Grand Terminal -=pagong=-SECRET-KEY";
+
 window.addEventListener('load', () => {
     const user = getCurrentUser();
     if (user) document.getElementById('user-name').textContent = user.fullName;
@@ -77,7 +80,7 @@ const INTRA = [
     "Prt",       // Paratungon
     "Unp",       // Unitop
     "Mkt",       // Market
-    "PLCo"        // PALECO
+    "PLC"        // PALECO
 ];
 
 // ── VEHICLE REGISTRY ──
@@ -117,6 +120,7 @@ document.getElementById('plate-number').addEventListener('blur', function() {
         setVehicleStatus('', '');
     } else {
         setVehicleStatus('ℹ️ New vehicle — select type below', 'yellow');
+        recalcFee();
     }
 });
 
@@ -245,7 +249,6 @@ function setPaymentFields(method, status, notes) {
 }
 
 // ── PASSENGER COUNT ──
-// Works with class "pax" in new app.html
 document.querySelectorAll('.pax').forEach(inp => {
     inp.addEventListener('input', updatePassengerTotal);
 });
@@ -277,6 +280,11 @@ function clearTickets() {
     ['ticket-record-10','ticket-record-5'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 }
 
+['serial-start-10','serial-start-5'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', recalcTickets);
+});
+
 function recalcTickets() {
     const fee = parseFloat(document.getElementById('terminal-fee-amount').value) || 0;
     if (fee <= 0) return;
@@ -288,7 +296,6 @@ function recalcTickets() {
     const rec10 = document.getElementById('ticket-record-10');
     const rec5  = document.getElementById('ticket-record-5');
 
-    // Clear previous
     if (r10) { r10.textContent = ''; r10.className = 'ticket-result'; }
     if (r5)  { r5.textContent  = ''; r5.className  = 'ticket-result'; }
     if (sum) { sum.innerHTML = ''; sum.classList.remove('visible'); }
@@ -298,7 +305,6 @@ function recalcTickets() {
     let record10 = '', record5 = '', valid = false;
 
     if (s5 > 0 && s10 === 0) {
-        // ALL ₱5
         const qty5 = fee / 5;
         if (!Number.isInteger(qty5)) {
             if (r5) { r5.textContent = `⚠️ ₱${fee} cannot use ₱5 tickets only.`; r5.className = 'ticket-result result-warn'; }
@@ -311,7 +317,6 @@ function recalcTickets() {
 
     } else if (s10 > 0 && s5 === 0) {
         if (fee % 10 !== 0) {
-            // Needs ₱5 too
             const qty10 = Math.floor(fee / 10);
             const end10 = s10 + qty10 - 1;
             record10 = `10-${String(s10).padStart(6,'0')}:${String(end10).padStart(6,'0')}`;
@@ -325,7 +330,6 @@ function recalcTickets() {
         }
 
     } else if (s10 > 0 && s5 > 0) {
-        // MIXED
         const qty10 = Math.floor(fee / 10);
         const rem   = fee % 10;
         const qty5  = rem > 0 ? rem / 5 : 0;
@@ -349,6 +353,7 @@ function recalcTickets() {
         sum.classList.add('visible');
     }
 }
+
 // ── QR VALIDATION FUNCTIONS ──
 async function calculateChecksum(plateNumber) {
     const data = plateNumber + SECRET_KEY;
@@ -363,7 +368,6 @@ async function calculateChecksum(plateNumber) {
 async function extractAndValidatePlate(scannedText) {
     const parts = scannedText.split('-');
     
-    // Secure format: NOISE-PLATE-CHECKSUM-NOISE (4 parts)
     if (parts.length === 4) {
         const extractedPlate = parts[1].trim();
         const receivedChecksum = parts[2].trim();
@@ -376,14 +380,13 @@ async function extractAndValidatePlate(scannedText) {
         }
     }
     
-    // Old format: NOISE-PLATE-NOISE (3 parts)
     if (parts.length === 3) {
         return { valid: true, plate: parts[1].trim(), message: '⚠️ Old format' };
     }
     
-    // Plain text (no dashes)
     return { valid: true, plate: scannedText.trim(), message: '✅ Plain QR' };
 }
+
 // ── QR SCANNER ──
 let qrScanner = null;
 window.startQRScanner = function() {
@@ -393,23 +396,20 @@ window.startQRScanner = function() {
     if (qrScanner) { qrScanner.clear().catch(()=>{}); qrScanner = null; }
     qrScanner = new Html5QrcodeScanner('qr-reader', { fps:10, qrbox:{width:250,height:250}, facingMode:'environment' }, false);
     qrScanner.render(async (text) => {
-    // Validate and extract plate
-    const result = await extractAndValidatePlate(text);
-    
-    if (result.valid && result.plate) {
-        // Valid QR - fill plate
-        document.getElementById('plate-number').value = result.plate.toUpperCase();
-        document.getElementById('plate-number').dispatchEvent(new Event('blur'));
-        qrScanner.clear().catch(()=>{});
-        qrDiv.style.display = 'none';
-        setVehicleStatus(result.message + ': ' + result.plate, 'green');
-    } else {
-        // FAKE QR detected!
-        qrScanner.clear().catch(()=>{});
-        qrDiv.style.display = 'none';
-        setVehicleStatus('❌ FAKE QR CODE! Not a registered BPGT vehicle.', 'red');
-        alert('⚠️ FAKE QR CODE DETECTED!\n\nThis QR code is not genuine. Contact admin.');
-    }
+        const result = await extractAndValidatePlate(text);
+        
+        if (result.valid && result.plate) {
+            document.getElementById('plate-number').value = result.plate.toUpperCase();
+            document.getElementById('plate-number').dispatchEvent(new Event('blur'));
+            qrScanner.clear().catch(()=>{});
+            qrDiv.style.display = 'none';
+            setVehicleStatus(result.message + ': ' + result.plate, 'green');
+        } else {
+            qrScanner.clear().catch(()=>{});
+            qrDiv.style.display = 'none';
+            setVehicleStatus('❌ FAKE QR CODE! Not a registered BPGT vehicle.', 'red');
+            alert('⚠️ FAKE QR CODE DETECTED!\n\nThis QR code is not genuine. Contact admin.');
+        }
     }, error => {
         console.error('QR Scanner error:', error);
         qrScanner.clear().catch(()=>{});
@@ -550,14 +550,11 @@ document.getElementById('passenger-form').addEventListener('submit', async e => 
     const status = document.getElementById('payment-status').value || '';
     let   notes  = document.getElementById('fee-notes').value.trim();
 
-    // Ticket records
     const ticket10 = document.getElementById('ticket-record-10') ? document.getElementById('ticket-record-10').value : '';
     const ticket5  = document.getElementById('ticket-record-5')  ? document.getElementById('ticket-record-5').value  : '';
 
-    // Auto receipt
     const receipt = `TF-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
 
-    // GPS note
     if (capturedPhoto) {
         notes = (notes ? notes + ' | ' : '') + 'Arkabala photo';
         if (capturedPhoto.geo) notes += ` GPS:${capturedPhoto.geo.lat.toFixed(5)},${capturedPhoto.geo.lon.toFixed(5)}`;
@@ -617,4 +614,4 @@ document.getElementById('passenger-form').addEventListener('submit', async e => 
     }
 });
 
-console.log('✅ BPGT V4.5 TICKET EDITION loaded!');
+console.log('✅ BPGT V4.5 TICKET EDITION with Secure QR loaded!');
