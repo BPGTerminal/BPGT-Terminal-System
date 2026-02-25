@@ -410,7 +410,12 @@ window.startQRScanner = function() {
         setVehicleStatus('❌ FAKE QR CODE! Not a registered BPGT vehicle.', 'red');
         alert('⚠️ FAKE QR CODE DETECTED!\n\nThis QR code is not genuine. Contact admin.');
     }
-    }, ()=>{});
+    }, error => {
+        console.error('QR Scanner error:', error);
+        qrScanner.clear().catch(()=>{});
+        qrDiv.style.display = 'none';
+        setVehicleStatus('❌ Scanner error. Please check camera permissions.', 'red');
+    });
 };
 
 // ── CAMERA / PHOTO ──
