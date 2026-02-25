@@ -349,7 +349,41 @@ function recalcTickets() {
         sum.classList.add('visible');
     }
 }
+// ── QR VALIDATION FUNCTIONS ──
+async function calculateChecksum(plateNumber) {
+    const data = plateNumber + SECRET_KEY;
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex.substring(0, 8).toUpperCase();
+}
 
+async function extractAndValidatePlate(scannedText) {
+    const parts = scannedText.split('-');
+    
+    // Secure format: NOISE-PLATE-CHECKSUM-NOISE (4 parts)
+    if (parts.length === 4) {
+        const extractedPlate = parts[1].trim();
+        const receivedChecksum = parts[2].trim();
+        const expectedChecksum = await calculateChecksum(extractedPlate);
+        
+        if (receivedChecksum === expectedChecksum) {
+            return { valid: true, plate: extractedPlate, message: '✅ Valid BPGT QR' };
+        } else {
+            return { valid: false, plate: null, message: '❌ FAKE QR' };
+        }
+    }
+    
+    // Old format: NOISE-PLATE-NOISE (3 parts)
+    if (parts.length === 3) {
+        return { valid: true, plate: parts[1].trim(), message: '⚠️ Old format' };
+    }
+    
+    // Plain text (no dashes)
+    return { valid: true, plate: scannedText.trim(), message: '✅ Plain QR' };
+}
 // ── QR SCANNER ──
 let qrScanner = null;
 window.startQRScanner = function() {
@@ -358,12 +392,24 @@ window.startQRScanner = function() {
     qrDiv.style.display = 'block';
     if (qrScanner) { qrScanner.clear().catch(()=>{}); qrScanner = null; }
     qrScanner = new Html5QrcodeScanner('qr-reader', { fps:10, qrbox:{width:250,height:250}, facingMode:'environment' }, false);
-    qrScanner.render(text => {
-        document.getElementById('plate-number').value = text.toUpperCase();
+    qrScanner.render(async (text) => {
+    // Validate and extract plate
+    const result = await extractAndValidatePlate(text);
+    
+    if (result.valid && result.plate) {
+        // Valid QR - fill plate
+        document.getElementById('plate-number').value = result.plate.toUpperCase();
         document.getElementById('plate-number').dispatchEvent(new Event('blur'));
         qrScanner.clear().catch(()=>{});
         qrDiv.style.display = 'none';
-        setVehicleStatus('✅ Plate scanned: ' + text, 'green');
+        setVehicleStatus(result.message + ': ' + result.plate, 'green');
+    } else {
+        // FAKE QR detected!
+        qrScanner.clear().catch(()=>{});
+        qrDiv.style.display = 'none';
+        setVehicleStatus('❌ FAKE QR CODE! Not a registered BPGT vehicle.', 'red');
+        alert('⚠️ FAKE QR CODE DETECTED!\n\nThis QR code is not genuine. Contact admin.');
+    }
     }, ()=>{});
 };
 
