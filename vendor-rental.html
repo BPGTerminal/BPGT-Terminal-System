@@ -54,7 +54,15 @@
             border: 1.5px solid #e2e8f0; border-radius: 8px;
             font-size: 15px; background: #f8fafc;
         }
-        .form-group input:focus { outline: none; border-color: #3b82f6; background: white; }
+        .form-group input:focus, .form-group select:focus { 
+            outline: none; border-color: #3b82f6; background: white; 
+        }
+        .vendor-info {
+            background: #d1fae5; border: 1.5px solid #059669;
+            border-radius: 8px; padding: 12px; margin-top: 8px;
+            font-size: 13px; color: #065f46;
+        }
+        .vendor-info strong { color: #047857; display: block; margin-bottom: 4px; }
         .fee-display {
             background: linear-gradient(135deg, #fef3c7, #fde68a);
             border: 2px solid #f59e0b; border-radius: 12px;
@@ -67,16 +75,13 @@
             font-size: 15px; font-weight: 700; cursor: pointer;
             margin-bottom: 8px;
         }
-        .btn-primary { background: #1e3a8a; color: white; }
         .btn-success { background: #059669; color: white; }
-        .btn-blue { background: #3b82f6; color: white; }
-        .btn-purple { background: #7c3aed; color: white; }
         .status-msg {
             padding: 13px; border-radius: 10px; margin-bottom: 14px;
             font-size: 14px; font-weight: 600; display: none;
         }
-        .status-success { background: #d1fae5; color: #065f46; }
-        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-success { background: #d1fae5; color: #065f46; border: 1.5px solid #059669; }
+        .status-error { background: #fee2e2; color: #991b1b; border: 1.5px solid #ef4444; }
         .ticket-field {
             background: #f8fafc; border: 1.5px solid #e2e8f0;
             border-radius: 10px; padding: 12px; margin-bottom: 10px;
@@ -97,7 +102,7 @@
             border: 1px solid #e2e8f0;
         }
         .result-ok { background: #f0fdf4; border-color: #059669; color: #065f46; }
-        #qr-reader { display: none; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        #ticket-section { display: none; }
     </style>
 </head>
 <body>
@@ -126,22 +131,21 @@
 
     <form id="vendor-form">
         <div class="form-section">
-            <div class="section-title">🏪 Stall Information</div>
+            <div class="section-title">🏪 Select Vendor</div>
             
             <div class="form-group">
-                <label>Stall Number</label>
-                <input type="text" id="stall-number" placeholder="e.g. STALL-01" required>
+                <label>BP Number (Business Permit)</label>
+                <select id="bp-number" required>
+                    <option value="">Select Vendor...</option>
+                    <option value="BPGT-2026-V001">BPGT-2026-V001 — LET'Z SARI-SARI STORE</option>
+                    <option value="BPGT-2026-V002">BPGT-2026-V002 — SUSAN SARI-SARI STORE</option>
+                    <option value="BPGT-2026-V003">BPGT-2026-V003 — LORNA SARI-SARI-STORE</option>
+                    <option value="BPGT-2026-V004">BPGT-2026-V004 — AKIP BISMILLAH CARINDERIA</option>
+                    <option value="BPGT-2026-V005">BPGT-2026-V005 — CHIVA'S EATERY</option>
+                </select>
             </div>
 
-            <button type="button" class="btn btn-blue" onclick="window.scanStallQR()" style="display:none;">
-                📷 Scan Stall QR Code
-            </button>
-            <div id="qr-reader"></div>
-
-            <div class="form-group">
-                <label>Vendor Name (optional)</label>
-                <input type="text" id="vendor-name" placeholder="Name of vendor">
-            </div>
+            <div id="vendor-info" style="display:none;"></div>
         </div>
 
         <div class="form-section">
@@ -169,15 +173,13 @@
             <div class="form-group">
                 <label>Payment Method</label>
                 <select id="payment-method" required>
-                    <option value="">Select Method</option>
-                    <option value="Cash">💵 Cash (Arkabala Ticket)</option>
+                    <option value="Cash" selected>💵 Cash (Arkabala Ticket)</option>
                     <option value="GCash">📱 GCash</option>
                     <option value="Maya">📱 Maya</option>
                 </select>
             </div>
 
-            <!-- TICKET SERIALS (only for Cash) -->
-            <div id="ticket-section" style="display:none;">
+            <div id="ticket-section" style="display:block;">
                 <div class="ticket-field">
                     <div class="ticket-label">
                         <span class="denom-badge badge-10">₱10</span>
@@ -198,6 +200,9 @@
             </div>
 
             <input type="hidden" id="ticket-record">
+            <input type="hidden" id="store-name">
+            <input type="hidden" id="proprietor">
+            <input type="hidden" id="vendor-type">
         </div>
 
         <button type="submit" class="btn btn-success" id="submit-btn">
@@ -216,6 +221,40 @@
 <script>
 requireLogin();
 
+// Vendor data (from your table)
+const VENDORS = {
+    'BPGT-2026-V001': { 
+        store: "LET'Z SARI-SARI STORE", 
+        proprietor: "MARIA LEOFE MAGDAEL GARDUCE", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-1035"
+    },
+    'BPGT-2026-V002': { 
+        store: "SUSAN SARI-SARI STORE", 
+        proprietor: "SUSAN PEREZ PILAR", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-1040"
+    },
+    'BPGT-2026-V003': { 
+        store: "LORNA SARI-SARI-STORE", 
+        proprietor: "LORNA TIONGCO SANO", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-1038"
+    },
+    'BPGT-2026-V004': { 
+        store: "AKIP BISMILLAH CARINDERIA", 
+        proprietor: "MARJELYN ESMON AKIP", 
+        type: "EATERY (PEDDLER)",
+        ca: "2026-1041"
+    },
+    'BPGT-2026-V005': { 
+        store: "CHIVA'S EATERY", 
+        proprietor: "RONALD VIADO MABUNGA", 
+        type: "EATERY (PEDDLER)",
+        ca: "2026-0533"
+    }
+};
+
 window.addEventListener('load', () => {
     const user = getCurrentUser();
     if (user && user.role === 'admin') {
@@ -230,7 +269,34 @@ function setDateTime() {
     document.getElementById('rental-time').value = now.toTimeString().slice(0,5);
 }
 
-// Show/hide ticket section based on payment method
+// Show vendor info when BP number selected
+document.getElementById('bp-number').addEventListener('change', function() {
+    const bpNumber = this.value;
+    const infoDiv = document.getElementById('vendor-info');
+    
+    if (bpNumber && VENDORS[bpNumber]) {
+        const vendor = VENDORS[bpNumber];
+        
+        // Fill hidden fields
+        document.getElementById('store-name').value = vendor.store;
+        document.getElementById('proprietor').value = vendor.proprietor;
+        document.getElementById('vendor-type').value = vendor.type;
+        
+        // Show vendor info
+        infoDiv.innerHTML = `
+            <strong>✅ ${vendor.store}</strong>
+            Owner: ${vendor.proprietor}<br>
+            Type: ${vendor.type}<br>
+            CA No: ${vendor.ca}
+        `;
+        infoDiv.style.display = 'block';
+        infoDiv.className = 'vendor-info';
+    } else {
+        infoDiv.style.display = 'none';
+    }
+});
+
+// Show/hide ticket section
 document.getElementById('payment-method').addEventListener('change', function() {
     const ticketSection = document.getElementById('ticket-section');
     if (this.value === 'Cash') {
@@ -240,7 +306,7 @@ document.getElementById('payment-method').addEventListener('change', function() 
     }
 });
 
-// Calculate ticket serial range
+// Calculate ticket serial
 function calcTicketSerial() {
     const s10 = parseInt(document.getElementById('serial-10').value) || 0;
     const s5 = parseInt(document.getElementById('serial-5').value) || 0;
@@ -280,9 +346,15 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
     btn.textContent = '⏳ Submitting...';
     msg.style.display = 'none';
 
+    const bpNumber = document.getElementById('bp-number').value;
+    const vendor = VENDORS[bpNumber];
+
     const params = new URLSearchParams({
-        stallNumber: document.getElementById('stall-number').value.toUpperCase().trim(),
-        vendorName: document.getElementById('vendor-name').value.trim(),
+        bpNumber: bpNumber,
+        storeName: vendor.store,
+        proprietor: vendor.proprietor,
+        vendorType: vendor.type,
+        caNumber: vendor.ca,
         rentalDate: document.getElementById('rental-date').value,
         rentalTime: document.getElementById('rental-time').value,
         amount: 10,
@@ -294,13 +366,11 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
     });
 
     try {
-        // TODO: Add your Google Apps Script URL for vendor rentals
-        const VENDOR_API_URL = CONFIG.VENDOR_API_URL.replace('/exec', '/exec'); // Update this
-        const res = await fetch(VENDOR_API_URL + '?' + params.toString(), { method: 'GET' });
+        const res = await fetch(CONFIG.VENDOR_API_URL + '?' + params.toString(), { method: 'GET' });
         const data = await res.json();
 
         if (data.success) {
-            msg.textContent = `✅ Submitted! Stall: ${params.get('stallNumber')} · ₱10.00`;
+            msg.textContent = `✅ Submitted! ${vendor.store} · ₱10.00`;
             msg.className = 'status-msg status-success';
             msg.style.display = 'block';
 
@@ -308,6 +378,7 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
                 document.getElementById('vendor-form').reset();
                 setDateTime();
                 msg.style.display = 'none';
+                document.getElementById('vendor-info').style.display = 'none';
                 document.getElementById('ticket-section').style.display = 'none';
             }, 3000);
         } else {
@@ -323,7 +394,7 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
     }
 });
 
-console.log('✅ Vendor Rental System loaded');
+console.log('✅ Vendor Rental System (Dropdown) loaded');
 </script>
 </body>
 </html>
