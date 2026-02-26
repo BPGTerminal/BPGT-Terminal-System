@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Scanner Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        body { padding: 20px; font-family: Arial; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; cursor: pointer; }
+        #qr-reader { width: 100%; max-width: 500px; margin: 20px auto; }
+        .result { background: #d1fae5; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<h1>QR Scanner Test</h1>
+
+<button onclick="testScanner()">START SCANNER</button>
+<button onclick="stopScanner()">STOP SCANNER</button>
+
+<div id="status" style="padding:10px;margin:10px 0;background:#eff6ff;border-radius:6px;"></div>
+
+<div id="qr-reader"></div>
+
+<div id="result"></div>
+
+<script>
+let scanner = null;
+
+function log(msg) {
+    document.getElementById('status').innerHTML += msg + '<br>';
+    console.log(msg);
+}
+
+function testScanner() {
+    log('Starting scanner...');
+    
+    try {
+        scanner = new Html5QrcodeScanner('qr-reader', {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+        });
+        
+        log('Scanner created!');
+        
+        scanner.render(
+            (decodedText) => {
+                log('SUCCESS! Scanned: ' + decodedText);
+                document.getElementById('result').innerHTML = '<div class="result">✅ Scanned: ' + decodedText + '</div>';
+            },
+            (error) => {
+                log('Error: ' + error);
+            }
+        );
+        
+        log('Scanner rendered!');
+        
+    } catch(e) {
+        log('EXCEPTION: ' + e.toString());
+    }
+}
+
+function stopScanner() {
+    if (scanner) {
+        scanner.clear();
+        scanner = null;
+        log('Scanner stopped');
+    }
+}
+</script>
+
+</body>
+</html>
