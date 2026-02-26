@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPGT Vendor Rentals</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e3a8a">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%; min-height: 100%;
+            background: #f1f5f9;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 15px; color: #1e293b;
+        }
+        .app-header {
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            color: white; padding: 12px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 38px; height: 38px; border-radius: 8px; }
+        .header-title { font-size: 13px; font-weight: 700; }
+        .header-sub { font-size: 11px; opacity: 0.8; }
+        .nav-tabs {
+            background: white; display: flex; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-tab {
+            flex: 1; padding: 12px; text-align: center; border: none;
+            background: white; color: #64748b; font-size: 13px;
+            font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
+        }
+        .nav-tab.active { color: #1e3a8a; border-bottom-color: #1e3a8a; background: #eff6ff; }
+        .main-content { max-width: 600px; margin: 0 auto; padding: 14px; }
+        .form-section {
+            background: white; border-radius: 12px; padding: 16px;
+            margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .section-title {
+            font-size: 12px; font-weight: 700; color: #1e3a8a;
+            text-transform: uppercase; margin-bottom: 14px;
+            padding-bottom: 8px; border-bottom: 2px solid #eff6ff;
+        }
+        .form-group { margin-bottom: 13px; }
+        .form-group label {
+            display: block; font-size: 11px; font-weight: 700;
+            color: #64748b; text-transform: uppercase; margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 10px 12px;
+            border: 1.5px solid #e2e8f0; border-radius: 8px;
+            font-size: 15px; background: #f8fafc;
+        }
+        .form-group input:focus { outline: none; border-color: #3b82f6; background: white; }
+        .fee-display {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 2px solid #f59e0b; border-radius: 12px;
+            padding: 14px; text-align: center; margin: 14px 0;
+        }
+        .fee-amount { font-size: 30px; font-weight: 800; color: #92400e; }
+        .fee-label { font-size: 12px; color: #78350f; margin-top: 2px; }
+        .btn {
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            margin-bottom: 8px;
+        }
+        .btn-primary { background: #1e3a8a; color: white; }
+        .btn-success { background: #059669; color: white; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn-purple { background: #7c3aed; color: white; }
+        .status-msg {
+            padding: 13px; border-radius: 10px; margin-bottom: 14px;
+            font-size: 14px; font-weight: 600; display: none;
+        }
+        .status-success { background: #d1fae5; color: #065f46; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .ticket-field {
+            background: #f8fafc; border: 1.5px solid #e2e8f0;
+            border-radius: 10px; padding: 12px; margin-bottom: 10px;
+        }
+        .ticket-label {
+            font-size: 12px; font-weight: 700; color: #1e3a8a;
+            margin-bottom: 8px;
+        }
+        .denom-badge {
+            color: white; padding: 2px 8px; border-radius: 4px;
+            font-size: 12px; margin-right: 6px;
+        }
+        .badge-10 { background: #1e3a8a; }
+        .badge-5 { background: #7c3aed; }
+        .ticket-result {
+            margin-top: 7px; font-size: 12px;
+            background: white; border-radius: 6px; padding: 7px 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .result-ok { background: #f0fdf4; border-color: #059669; color: #065f46; }
+        #qr-reader { display: none; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="header-left">
+        <img src="bpgt-logo.png" class="header-logo" onerror="this.style.display='none'">
+        <div>
+            <div class="header-title">🏪 BPGT Vendor Rentals</div>
+            <div class="header-sub">Stall Rental Collection v4.5</div>
+        </div>
+    </div>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.35);color:white;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;">
+        ⬅ Logout
+    </button>
+</div>
+
+<div class="nav-tabs">
+    <button class="nav-tab" onclick="location.href='app.html'">🚌 Vehicles</button>
+    <button class="nav-tab active">🏪 Vendors</button>
+    <button class="nav-tab" onclick="location.href='admin.html'" id="admin-tab" style="display:none;">⚙️ Admin</button>
+</div>
+
+<div class="main-content">
+    <div class="status-msg" id="status-message"></div>
+
+    <form id="vendor-form">
+        <div class="form-section">
+            <div class="section-title">🏪 Stall Information</div>
+            
+            <div class="form-group">
+                <label>Stall Number</label>
+                <input type="text" id="stall-number" placeholder="e.g. STALL-01" required>
+            </div>
+
+            <button type="button" class="btn btn-blue" onclick="window.scanStallQR()" style="display:none;">
+                📷 Scan Stall QR Code
+            </button>
+            <div id="qr-reader"></div>
+
+            <div class="form-group">
+                <label>Vendor Name (optional)</label>
+                <input type="text" id="vendor-name" placeholder="Name of vendor">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">📅 Rental Details</div>
+            
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="rental-date" required>
+            </div>
+
+            <div class="form-group">
+                <label>Time</label>
+                <input type="time" id="rental-time" required>
+            </div>
+
+            <div class="fee-display">
+                <div class="fee-amount">₱10.00</div>
+                <div class="fee-label">Daily Stall Rental Fee</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">💰 Payment & Tickets</div>
+
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select id="payment-method" required>
+                    <option value="">Select Method</option>
+                    <option value="Cash">💵 Cash (Arkabala Ticket)</option>
+                    <option value="GCash">📱 GCash</option>
+                    <option value="Maya">📱 Maya</option>
+                </select>
+            </div>
+
+            <!-- TICKET SERIALS (only for Cash) -->
+            <div id="ticket-section" style="display:none;">
+                <div class="ticket-field">
+                    <div class="ticket-label">
+                        <span class="denom-badge badge-10">₱10</span>
+                        Enter ticket serial number:
+                    </div>
+                    <input type="number" id="serial-10" placeholder="000001" min="1">
+                    <div class="ticket-result" id="result-10"></div>
+                </div>
+
+                <div class="ticket-field">
+                    <div class="ticket-label">
+                        <span class="denom-badge badge-5">₱5</span>
+                        Or use TWO ₱5 tickets:
+                    </div>
+                    <input type="number" id="serial-5" placeholder="000001" min="1">
+                    <div class="ticket-result" id="result-5"></div>
+                </div>
+            </div>
+
+            <input type="hidden" id="ticket-record">
+        </div>
+
+        <button type="submit" class="btn btn-success" id="submit-btn">
+            📤 SUBMIT RENTAL PAYMENT
+        </button>
+    </form>
+
+    <div style="text-align:center;padding:20px 0;font-size:11px;color:#94a3b8;">
+        <strong>BPGT Terminal System v4.5</strong><br>
+        © 2026 Joey S. Heredero
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script>
+requireLogin();
+
+window.addEventListener('load', () => {
+    const user = getCurrentUser();
+    if (user && user.role === 'admin') {
+        document.getElementById('admin-tab').style.display = 'block';
+    }
+    setDateTime();
+});
+
+function setDateTime() {
+    const now = new Date();
+    document.getElementById('rental-date').value = now.toISOString().split('T')[0];
+    document.getElementById('rental-time').value = now.toTimeString().slice(0,5);
+}
+
+// Show/hide ticket section based on payment method
+document.getElementById('payment-method').addEventListener('change', function() {
+    const ticketSection = document.getElementById('ticket-section');
+    if (this.value === 'Cash') {
+        ticketSection.style.display = 'block';
+    } else {
+        ticketSection.style.display = 'none';
+    }
+});
+
+// Calculate ticket serial range
+function calcTicketSerial() {
+    const s10 = parseInt(document.getElementById('serial-10').value) || 0;
+    const s5 = parseInt(document.getElementById('serial-5').value) || 0;
+    const r10 = document.getElementById('result-10');
+    const r5 = document.getElementById('result-5');
+    const hidden = document.getElementById('ticket-record');
+
+    r10.textContent = '';
+    r5.textContent = '';
+    hidden.value = '';
+
+    if (s10 > 0) {
+        const record = `10-${String(s10).padStart(6,'0')}`;
+        r10.textContent = `1 ticket · Serial: ${String(s10).padStart(6,'0')} · ₱10 ✅`;
+        r10.className = 'ticket-result result-ok';
+        hidden.value = record;
+    } else if (s5 > 0) {
+        const end5 = s5 + 1;
+        const record = `5-${String(s5).padStart(6,'0')}:${String(end5).padStart(6,'0')}`;
+        r5.textContent = `2 tickets · Serial: ${String(s5).padStart(6,'0')} to ${String(end5).padStart(6,'0')} · ₱10 ✅`;
+        r5.className = 'ticket-result result-ok';
+        hidden.value = record;
+    }
+}
+
+document.getElementById('serial-10').addEventListener('input', calcTicketSerial);
+document.getElementById('serial-5').addEventListener('input', calcTicketSerial);
+
+// Form submission
+document.getElementById('vendor-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const msg = document.getElementById('status-message');
+    const user = getCurrentUser();
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Submitting...';
+    msg.style.display = 'none';
+
+    const params = new URLSearchParams({
+        stallNumber: document.getElementById('stall-number').value.toUpperCase().trim(),
+        vendorName: document.getElementById('vendor-name').value.trim(),
+        rentalDate: document.getElementById('rental-date').value,
+        rentalTime: document.getElementById('rental-time').value,
+        amount: 10,
+        paymentMethod: document.getElementById('payment-method').value,
+        ticketRecord: document.getElementById('ticket-record').value,
+        receiptNumber: `VR-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+        collector: user.username,
+        timestamp: new Date().toISOString()
+    });
+
+    try {
+        const VENDOR_API_URL = CONFIG.VENDOR_API_URL; // Update this
+        const res = await fetch(VENDOR_API_URL + '?' + params.toString(), { method: 'GET' });
+        const data = await res.json();
+
+        if (data.success) {
+            msg.textContent = `✅ Submitted! Stall: ${params.get('stallNumber')} · ₱10.00`;
+            msg.className = 'status-msg status-success';
+            msg.style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('vendor-form').reset();
+                setDateTime();
+                msg.style.display = 'none';
+                document.getElementById('ticket-section').style.display = 'none';
+            }, 3000);
+        } else {
+            throw new Error(data.message || 'Failed');
+        }
+    } catch(err) {
+        msg.textContent = '❌ Submission failed. Check connection.';
+        msg.className = 'status-msg status-error';
+        msg.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 SUBMIT RENTAL PAYMENT';
+    }
+});
+
+console.log('✅ Vendor Rental System loaded');
+</script>
+</body>
+</html>
