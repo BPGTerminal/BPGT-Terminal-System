@@ -209,7 +209,28 @@
         <button class="logout-btn" onclick="logout()">⬅ Logout</button>
     </div>
 </div>
+<!-- NAVIGATION TABS -->
+<div style="background:white;display:flex;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+    <button onclick="location.href='app.html'" style="flex:1;padding:12px;border:none;background:#eff6ff;color:#1e3a8a;border-bottom:3px solid #1e3a8a;font-size:13px;font-weight:600;cursor:pointer;">
+        🚌 Vehicles
+    </button>
+    <button onclick="location.href='vendor-rental.html'" style="flex:1;padding:12px;border:none;background:white;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;">
+        🏪 Vendors
+    </button>
+    <button onclick="location.href='admin.html'" id="admin-nav-tab" style="flex:1;padding:12px;border:none;background:white;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;display:none;">
+        ⚙️ Admin
+    </button>
+</div>
 
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const user = getCurrentUser();
+    if (user && user.role === 'admin') {
+        const tab = document.getElementById('admin-nav-tab');
+        if (tab) tab.style.display = 'block';
+    }
+});
+</script>
 <div class="main-content">
     <div class="status-msg" id="status-message"></div>
     <form id="passenger-form">
