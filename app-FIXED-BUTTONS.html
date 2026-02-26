@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BPGT Terminal System</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BPGT">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#1e3a8a">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%; min-height: 100%;
+            background: #f1f5f9;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 15px; color: #1e293b;
+            overflow-x: hidden;
+        }
+        .app-header {
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            color: white; padding: 12px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; }
+        .header-title { font-size: 13px; font-weight: 700; }
+        .header-sub   { font-size: 11px; opacity: 0.8; }
+        .header-right { text-align: right; }
+        .header-user  { font-size: 12px; opacity: 0.9; }
+        .logout-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35);
+            color: white; padding: 5px 12px; border-radius: 6px;
+            font-size: 12px; cursor: pointer; margin-top: 4px;
+        }
+        .main-content { max-width: 600px; margin: 0 auto; padding: 14px; }
+        .form-section {
+            background: white; border-radius: 12px; padding: 16px;
+            margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .section-title {
+            font-size: 12px; font-weight: 700; color: #1e3a8a;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 14px; padding-bottom: 8px;
+            border-bottom: 2px solid #eff6ff;
+        }
+        .form-group { margin-bottom: 13px; }
+        .form-group label {
+            display: block; font-size: 11px; font-weight: 700;
+            color: #64748b; text-transform: uppercase;
+            letter-spacing: 0.3px; margin-bottom: 5px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%; padding: 10px 12px;
+            border: 1.5px solid #e2e8f0; border-radius: 8px;
+            font-size: 15px; color: #1e293b; background: #f8fafc;
+            -webkit-appearance: none; transition: border-color 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus { outline: none; border-color: #3b82f6; background: white; }
+        .form-group textarea { resize: vertical; min-height: 56px; }
+        .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .total-bar {
+            background: #f0fdf4; border: 1.5px solid #059669;
+            border-radius: 8px; padding: 10px 14px;
+            font-weight: 700; color: #059669;
+            text-align: center; font-size: 16px; margin-top: 10px;
+        }
+        .btn {
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            text-align: center; transition: all 0.15s; margin-bottom: 8px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: #1e3a8a; color: white; }
+        .btn-success { background: #059669; color: white; }
+        .btn-blue    { background: #3b82f6; color: white; }
+        .btn-purple  { background: #7c3aed; color: white; }
+        .btn-sm {
+            width: auto; padding: 8px 14px; font-size: 13px;
+            border-radius: 8px; display: inline-block; margin: 4px 4px 0 0;
+        }
+        .fee-section { display: none; }
+        .fee-section.visible { display: block; }
+        .fee-card {
+            background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+            border: 2px solid #059669; border-radius: 12px;
+            padding: 14px; text-align: center; margin-bottom: 14px;
+        }
+        .fee-amount { font-size: 30px; font-weight: 800; color: #059669; }
+        .fee-label  { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .ticket-section { display: none; }
+        .ticket-section.visible { display: block; }
+        .ticket-hint {
+            background: #fef3c7; border: 1.5px solid #f59e0b;
+            border-radius: 8px; padding: 10px 14px;
+            font-size: 13px; color: #92400e; margin-bottom: 12px;
+        }
+        .ticket-field {
+            background: #f8fafc; border: 1.5px solid #e2e8f0;
+            border-radius: 10px; padding: 12px; margin-bottom: 10px;
+        }
+        .ticket-label {
+            font-size: 12px; font-weight: 700; color: #1e3a8a;
+            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+        .denom-badge {
+            color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;
+        }
+        .badge-10 { background: #1e3a8a; }
+        .badge-5  { background: #7c3aed; }
+        .ticket-row { display: flex; gap: 8px; align-items: center; }
+        .ticket-row input {
+            flex: 1; padding: 10px; border: 1.5px solid #e2e8f0;
+            border-radius: 8px; font-size: 18px; font-weight: 700;
+            letter-spacing: 2px; font-family: monospace; background: white;
+            color: #1e293b;
+        }
+        .ticket-result {
+            margin-top: 7px; font-size: 12px; color: #64748b;
+            background: white; border-radius: 6px; padding: 7px 10px;
+            border: 1px solid #e2e8f0; min-height: 22px;
+        }
+        .result-ok   { background: #f0fdf4; border-color: #059669; color: #065f46; }
+        .result-warn { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+        .ticket-summary {
+            background: #eff6ff; border: 2px solid #1e3a8a;
+            border-radius: 10px; padding: 12px; margin-top: 10px;
+            font-size: 13px; color: #1e3a8a; display: none;
+        }
+        .ticket-summary.visible { display: block; }
+        .camera-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: black;
+            z-index: 9999; flex-direction: column;
+        }
+        .camera-overlay.visible { display: flex; }
+        #camera-video { width: 100%; flex: 1; object-fit: cover; }
+        .cam-controls {
+            background: #1e293b; padding: 20px;
+            display: flex; gap: 14px; justify-content: center; align-items: center;
+        }
+        .snap-btn {
+            background: white; border: none; border-radius: 50%;
+            width: 68px; height: 68px; font-size: 26px; cursor: pointer;
+        }
+        .close-cam {
+            background: #ef4444; color: white; border: none;
+            border-radius: 50%; width: 48px; height: 48px;
+            font-size: 20px; cursor: pointer;
+        }
+        .status-msg {
+            padding: 13px; border-radius: 10px; margin-bottom: 14px;
+            font-size: 14px; font-weight: 600; display: none;
+        }
+        .status-success { background: #d1fae5; color: #065f46; border: 1.5px solid #059669; }
+        .status-error   { background: #fee2e2; color: #991b1b; border: 1.5px solid #ef4444; }
+        .info-box { border-radius: 8px; padding: 9px 13px; font-size: 13px; margin-top: 7px; }
+        .info-orange { background: #fff7ed; border-left: 4px solid #ea580c; color: #92400e; }
+        .info-yellow { background: #fef3c7; border-left: 4px solid #f59e0b; color: #92400e; }
+        .info-green  { background: #f0fdf4; border-left: 4px solid #059669; color: #065f46; }
+        .hidden { display: none !important; }
+        #qr-reader { display: none; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        #arkabala-preview img { width: 100%; border-radius: 10px; margin-top: 8px; }
+        @media (max-width: 360px) { .main-content { padding: 10px; } .fee-amount { font-size: 24px; } }
+    </style>
+</head>
+<body>
+
+<div class="camera-overlay" id="camera-overlay">
+    <video id="camera-video" autoplay playsinline></video>
+    <div class="cam-controls">
+        <button class="close-cam" onclick="window.closeCam()">✕</button>
+        <button class="snap-btn" onclick="window.snapPhoto()">📸</button>
+    </div>
+</div>
+
+<div class="app-header">
+    <div class="header-left">
+        <img src="bpgt-logo.png" alt="BPGT" class="header-logo" onerror="this.style.display='none'">
+        <div>
+            <div class="header-title">🚌 BPGT Terminal</div>
+            <div class="header-sub">Passenger & Revenue System v4.5</div>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="header-user" id="user-name">Loading...</div>
+        <button class="logout-btn" onclick="logout()">⬅ Logout</button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="status-msg" id="status-message"></div>
+    <form id="passenger-form">
+        <div class="form-section">
+            <div class="section-title">🚗 Vehicle Information</div>
+            <div class="form-group">
+                <label>Plate Number</label>
+                <input type="text" id="plate-number" placeholder="e.g. AAD 5514" autocomplete="off" autocapitalize="characters" required>
+                <div id="vehicle-status"></div>
+            </div>
+            <button type="button" class="btn btn-blue" onclick="window.startQRScanner()">
+                📷 Scan QR Code (Plate Number)
+            </button>
+            <div id="qr-reader"></div>
+            <div class="form-group" style="margin-top:10px;">
+                <label>Vehicle Type</label>
+                <select id="denomination" required>
+                    <option value="">Select Vehicle Type</option>
+                    <option>BUS</option>
+                    <option>SHUTTLE VAN</option>
+                    <option>JEEP</option>
+                    <option>MULTICAB</option>
+                    <option>FILCAB</option>
+                    <option>TRICYCLE</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Transport Group</label>
+                <select id="transport-group" disabled required>
+                    <option value="">First select vehicle type</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">📋 Trip Details</div>
+            <div class="count-grid">
+                <div class="form-group"><label>Date</label><input type="date" id="trip-date" required></div>
+                <div class="form-group"><label>Time</label><input type="time" id="trip-time" required></div>
+            </div>
+            <div class="form-group">
+                <label>Arrival or Departure?</label>
+                <select id="type" required>
+                    <option value="">Select Type</option>
+                    <option value="ARRIVAL">🟢 ARRIVAL — Coming IN</option>
+                    <option value="DEPARTURE">🔴 DEPARTURE — Going OUT</option>
+                </select>
+            </div>
+            <div class="form-group hidden" id="origin-group">
+                <label>Coming From (Origin)</label>
+                <select id="origin"><option value="">Select Origin</option></select>
+            </div>
+            <div class="form-group hidden" id="destination-group">
+                <label>Going To (Destination)</label>
+                <select id="destination"><option value="">Select Destination</option></select>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="section-title">👥 Passenger Count</div>
+            <div class="count-grid">
+                <div class="form-group"><label>Adult Male</label><input type="number" id="adult-male" class="pax" min="0" value="0"></div>
+                <div class="form-group"><label>Adult Female</label><input type="number" id="adult-female" class="pax" min="0" value="0"></div>
+                <div class="form-group"><label>Child Male</label><input type="number" id="child-male" class="pax" min="0" value="0"></div>
+                <div class="form-group"><label>Child Female</label><input type="number" id="child-female" class="pax" min="0" value="0"></div>
+                <div class="form-group"><label>Senior Male</label><input type="number" id="senior-male" class="pax" min="0" value="0"></div>
+                <div class="form-group"><label>Senior Female</label><input type="number" id="senior-female" class="pax" min="0" value="0"></div>
+                <div class="form-group"><label>PWD Male</label><input type="number" id="pwd-male" class="pax" min="0" value="0"></div>
+                <div class="form-group"><label>PWD Female</label><input type="number" id="pwd-female" class="pax" min="0" value="0"></div>
+            </div>
+            <div class="form-group"><label>Pregnant Women</label><input type="number" id="pregnant" class="pax" min="0" value="0"></div>
+            <input type="hidden" id="adult-total">
+            <input type="hidden" id="child-total">
+            <div class="total-bar" id="total-passengers">Total Passengers: 0</div>
+        </div>
+
+        <div class="form-section fee-section" id="fee-section">
+            <div class="section-title">💰 Terminal Fee</div>
+            <div id="fee-warning"></div>
+            <div class="fee-card">
+                <div class="fee-amount" id="fee-amount-display">₱0.00</div>
+                <div class="fee-label">Terminal Fee — Departure Only · Ordinance 2026-01</div>
+            </div>
+            <input type="hidden" id="terminal-fee-amount" value="0">
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select id="payment-method">
+                    <option value="">Select Method</option>
+                    <option value="Cash">💵 Cash (Arkabala Ticket)</option>
+                    <option value="GCash">📱 GCash</option>
+                    <option value="Maya">📱 Maya</option>
+                    <option value="Bank Transfer">🏦 Bank Transfer</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Payment Status</label>
+                <select id="payment-status">
+                    <option value="">Select Status</option>
+                    <option value="Paid">✅ Paid</option>
+                    <option value="Unpaid">❌ Unpaid / Will pay later</option>
+                    <option value="Waived">⚪ Waived (Special case)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <textarea id="fee-notes" placeholder="Optional notes..."></textarea>
+            </div>
+
+            <div class="ticket-section" id="ticket-section">
+                <div class="section-title" style="margin-top:4px;">🎫 Arkabala Ticket Serials</div>
+                <div class="ticket-hint" id="ticket-hint">Select fee above to see ticket info</div>
+                <div class="ticket-field">
+                    <div class="ticket-label">
+                        <span class="denom-badge badge-10">₱10</span>
+                        Enter FIRST (starting) serial number:
+                    </div>
+                    <div class="ticket-row">
+                        <input type="number" id="serial-start-10" placeholder="000001" min="1" oninput="recalcTickets()">
+                        <button type="button" class="btn btn-blue btn-sm" onclick="window.ocrScan('10')">🔍 Scan</button>
+                    </div>
+                    <div class="ticket-result" id="result-10"></div>
+                </div>
+                <div class="ticket-field">
+                    <div class="ticket-label">
+                        <span class="denom-badge badge-5">₱5</span>
+                        Enter FIRST (starting) serial number:
+                    </div>
+                    <div class="ticket-row">
+                        <input type="number" id="serial-start-5" placeholder="000001" min="1" oninput="recalcTickets()">
+                        <button type="button" class="btn btn-purple btn-sm" onclick="window.ocrScan('5')">🔍 Scan</button>
+                    </div>
+                    <div class="ticket-result" id="result-5"></div>
+                </div>
+                <div class="ticket-summary" id="ticket-summary"></div>
+                <input type="hidden" id="ticket-record-10">
+                <input type="hidden" id="ticket-record-5">
+            </div>
+
+            <div style="margin-top:12px;">
+                <button type="button" class="btn btn-purple" onclick="window.capturePhoto()">
+                    📸 Capture Arkabala Photo (with GPS)
+                </button>
+                <div id="arkabala-preview"></div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success" id="submit-btn" style="margin-bottom:28px;">
+            📤 SUBMIT DATA
+        </button>
+    </form>
+
+    <div style="text-align:center;padding:20px 16px 30px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:30px;">
+        <div style="margin-bottom:6px;">
+            <img src="pagong-logo.png" alt="pagong" style="height:28px;width:28px;border-radius:50%;vertical-align:middle;margin-right:8px;opacity:0.7;" onerror="this.style.display='none'">
+            <strong style="color:#64748b;">BPGT Terminal System v4.5</strong>
+        </div>
+        <div style="font-size:10px;opacity:0.8;">
+            © 2026 Joey S. Heredero · All Rights Reserved<br>
+            Brooke's Point Grand Terminal · Palawan, Philippines
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="app-logic.js"></script>
+</body>
+</html>
