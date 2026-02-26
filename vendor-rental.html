@@ -294,7 +294,8 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
     });
 
     try {
-        const VENDOR_API_URL = CONFIG.VENDOR_API_URL; // Update this
+        // TODO: Add your Google Apps Script URL for vendor rentals
+        const VENDOR_API_URL = CONFIG.VENDOR_API_URL.replace('/exec', '/exec'); // Update this
         const res = await fetch(VENDOR_API_URL + '?' + params.toString(), { method: 'GET' });
         const data = await res.json();
 
