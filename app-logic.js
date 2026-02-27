@@ -354,7 +354,7 @@ function recalcTickets() {
     }
 }
 
-// ── QR VALIDATION FUNCTIONS ──
+// ── QR VALIDATION FUNCTIONS (SIMPLE VERSION) ──
 async function calculateChecksum(plateNumber) {
     const data = plateNumber + SECRET_KEY;
     const encoder = new TextEncoder();
@@ -366,11 +366,12 @@ async function calculateChecksum(plateNumber) {
 }
 
 async function extractAndValidatePlate(scannedText) {
-    const parts = scannedText.split('-');
+    const parts = scannedText.trim().split('-');
     
-    if (parts.length === 4) {
-        const extractedPlate = parts[1].trim();
-        const receivedChecksum = parts[2].trim();
+    // Simple secure format: PLATE-CHECKSUM (2 parts)
+    if (parts.length === 2) {
+        const extractedPlate = parts[0].trim();
+        const receivedChecksum = parts[1].trim();
         const expectedChecksum = await calculateChecksum(extractedPlate);
         
         if (receivedChecksum === expectedChecksum) {
@@ -380,12 +381,15 @@ async function extractAndValidatePlate(scannedText) {
         }
     }
     
-    if (parts.length === 3) {
-        return { valid: true, plate: parts[1].trim(), message: '⚠️ Old format' };
+    // Plain text (no dashes) - for backwards compatibility
+    if (parts.length === 1) {
+        return { valid: true, plate: scannedText.trim(), message: '✅ Plain QR' };
     }
     
-    return { valid: true, plate: scannedText.trim(), message: '✅ Plain QR' };
+    // Unknown format
+    return { valid: false, plate: null, message: '❌ Invalid format' };
 }
+
 
 // ── QR SCANNER ──
 let qrScanner = null;
