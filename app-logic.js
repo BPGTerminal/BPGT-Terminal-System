@@ -109,7 +109,23 @@ document.getElementById('plate-number').addEventListener('input', function() {
 document.getElementById('plate-number').addEventListener('blur', function() {
     const plate = this.value.toUpperCase().trim();
     if (!plate) return;
-    const info = registry[plate];
+    
+    // Check registry - try multiple formats to handle spaces
+    let info = registry[plate];
+    
+    // If not found, try removing all spaces
+    if (!info) {
+        const plateNoSpaces = plate.replace(/\s/g, '');
+        info = registry[plateNoSpaces];
+    }
+    
+    // If still not found, try adding space before last 3 chars
+    // (handles "387XFF" → "387 XFF" conversion)
+    if (!info && plate.length > 3) {
+        const plateWithSpace = plate.slice(0, -3) + ' ' + plate.slice(-3);
+        info = registry[plateWithSpace];
+    }
+    
     if (info) {
         document.getElementById('denomination').value = info.denomination;
         document.getElementById('denomination').dispatchEvent(new Event('change'));
