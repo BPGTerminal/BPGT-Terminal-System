@@ -1,6 +1,6 @@
 // ============================================================
 // BPGT TERMINAL SYSTEM — app-logic.js — VERSION 4.5
-// TICKET EDITION — COMPLETE WORKING VERSION
+// TICKET EDITION + PHOTO QR SCANNER — COMPLETE WORKING VERSION
 // ============================================================
 
 requireLogin();
@@ -203,7 +203,6 @@ function recalcFee() {
     }
     let fee = FEES[denom] || 0;
 
-    // Tricycle day pass
     if (denom === 'TRICYCLE' && plate) {
         const paid = getTricyclePaid(plate);
         if (paid) {
@@ -354,7 +353,7 @@ function recalcTickets() {
     }
 }
 
-// ── QR VALIDATION FUNCTIONS (SIMPLE VERSION) ──
+// ── QR VALIDATION FUNCTIONS (SIMPLE 2-PART FORMAT) ──
 async function calculateChecksum(plateNumber) {
     const data = plateNumber + SECRET_KEY;
     const encoder = new TextEncoder();
@@ -390,36 +389,46 @@ async function extractAndValidatePlate(scannedText) {
     return { valid: false, plate: null, message: '❌ Invalid format' };
 }
 
-
-// ── QR SCANNER ──
-let qrScanner = null;
+// ── QR SCANNER (PHOTO-BASED - NO PERMISSION ISSUES!) ──
 window.startQRScanner = function() {
-    const qrDiv = document.getElementById('qr-reader');
-    if (!qrDiv) return;
-    qrDiv.style.display = 'block';
-    if (qrScanner) { qrScanner.clear().catch(()=>{}); qrScanner = null; }
-    qrScanner = new Html5QrcodeScanner('qr-reader', { fps:10, qrbox:{width:250,height:250}, facingMode:'environment' }, false);
-    qrScanner.render(async (text) => {
-        const result = await extractAndValidatePlate(text);
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // Use back camera on phones
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
         
-        if (result.valid && result.plate) {
-            document.getElementById('plate-number').value = result.plate.toUpperCase();
-            document.getElementById('plate-number').dispatchEvent(new Event('blur'));
-            qrScanner.clear().catch(()=>{});
-            qrDiv.style.display = 'none';
-            setVehicleStatus(result.message + ': ' + result.plate, 'green');
-        } else {
-            qrScanner.clear().catch(()=>{});
-            qrDiv.style.display = 'none';
-            setVehicleStatus('❌ FAKE QR CODE! Not a registered BPGT vehicle.', 'red');
-            alert('⚠️ FAKE QR CODE DETECTED!\n\nThis QR code is not genuine. Contact admin.');
+        setVehicleStatus('📸 Reading QR code...', 'yellow');
+        
+        try {
+            // Use Html5Qrcode to scan the file
+            const html5QrCode = new Html5Qrcode("qr-reader");
+            
+            const qrText = await html5QrCode.scanFile(file, false);
+            
+            // Validate the QR code
+            const result = await extractAndValidatePlate(qrText);
+            
+            if (result.valid && result.plate) {
+                document.getElementById('plate-number').value = result.plate.toUpperCase();
+                document.getElementById('plate-number').dispatchEvent(new Event('blur'));
+                setVehicleStatus(result.message + ': ' + result.plate, 'green');
+            } else {
+                setVehicleStatus('❌ FAKE QR CODE!', 'red');
+                alert('⚠️ FAKE QR CODE DETECTED!\n\nThis QR code is not genuine.');
+            }
+            
+        } catch (err) {
+            setVehicleStatus('❌ No QR code found in image', 'red');
+            console.error('QR scan error:', err);
         }
-    }, error => {
-        console.error('QR Scanner error:', error);
-        qrScanner.clear().catch(()=>{});
-        qrDiv.style.display = 'none';
-        setVehicleStatus('❌ Scanner error. Please check camera permissions.', 'red');
-    });
+    };
+    
+    // Trigger file selection
+    input.click();
 };
 
 // ── CAMERA / PHOTO ──
@@ -484,9 +493,9 @@ async function attachPhotoWithGPS(imgData) {
             ${geo2 ? `📍 GPS: ${geo2.lat.toFixed(6)}, ${geo2.lon.toFixed(6)} (±${Math.round(geo2.accuracy)}m)` : '⚠️ GPS unavailable'}
         </div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-            <button type="button" onclick="ocrScan('10')" style="padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔍 Read ₱10 Serial</button>
-            <button type="button" onclick="ocrScan('5')"  style="padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔍 Read ₱5 Serial</button>
-            <button type="button" onclick="removePhoto()" style="padding:8px 14px;background:#ef4444;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">❌ Remove</button>
+            <button type="button" onclick="window.ocrScan('10')" style="padding:8px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔍 Read ₱10 Serial</button>
+            <button type="button" onclick="window.ocrScan('5')"  style="padding:8px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🔍 Read ₱5 Serial</button>
+            <button type="button" onclick="window.removePhoto()" style="padding:8px 14px;background:#ef4444;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">❌ Remove</button>
         </div>`;
 }
 window.removePhoto = function() {
@@ -618,4 +627,4 @@ document.getElementById('passenger-form').addEventListener('submit', async e => 
     }
 });
 
-console.log('✅ BPGT V4.5 TICKET EDITION with Secure QR loaded!');
+console.log('✅ BPGT V4.5 TICKET EDITION with Photo QR Scanner loaded!');
