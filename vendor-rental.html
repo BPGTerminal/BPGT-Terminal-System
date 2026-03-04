@@ -102,7 +102,6 @@
             border: 1px solid #e2e8f0;
         }
         .result-ok { background: #f0fdf4; border-color: #059669; color: #065f46; }
-        #ticket-section { display: none; }
     </style>
 </head>
 <body>
@@ -142,6 +141,14 @@
                     <option value="BPGT-2026-V003">BPGT-2026-V003 — LORNA SARI-SARI-STORE</option>
                     <option value="BPGT-2026-V004">BPGT-2026-V004 — AKIP BISMILLAH CARINDERIA</option>
                     <option value="BPGT-2026-V005">BPGT-2026-V005 — CHIVA'S EATERY</option>
+                    <option value="BPGT-2026-V006">BPGT-2026-V006 — RAYYAN EATERY</option>
+                    <option value="BPGT-2026-V007">BPGT-2026-V007 — CAYABYAB</option>
+                    <option value="BPGT-2026-V008">BPGT-2026-V008 — NAY ROSA</option>
+                    <option value="BPGT-2026-V009">BPGT-2026-V009 — NAY NENITA</option>
+                    <option value="BPGT-2026-V010">BPGT-2026-V010 — SIOPAO RIO</option>
+                    <option value="BPGT-2026-V011">BPGT-2026-V011 — ZAMBALES</option>
+                    <option value="BPGT-2026-V012">BPGT-2026-V012 — ARQUERO</option>
+                    <option value="BPGT-2026-V013">BPGT-2026-V013 — LOTTO</option>
                 </select>
             </div>
 
@@ -221,7 +228,7 @@
 <script>
 requireLogin();
 
-// Vendor data (from your table)
+// Vendor data - ALL 13 VENDORS
 const VENDORS = {
     'BPGT-2026-V001': { 
         store: "LET'Z SARI-SARI STORE", 
@@ -252,6 +259,54 @@ const VENDORS = {
         proprietor: "RONALD VIADO MABUNGA", 
         type: "EATERY (PEDDLER)",
         ca: "2026-0533"
+    },
+    'BPGT-2026-V006': { 
+        store: "RAYYAN EATERY", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "EATERY (PEDDLER)",
+        ca: "2026-AABC-1"
+    },
+    'BPGT-2026-V007': { 
+        store: "CAYABYAB", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-BABC-2"
+    },
+    'BPGT-2026-V008': { 
+        store: "NAY ROSA", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-CABC-3"
+    },
+    'BPGT-2026-V009': { 
+        store: "NAY NENITA", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-DABC-4"
+    },
+    'BPGT-2026-V010': { 
+        store: "SIOPAO RIO", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-EABC-5"
+    },
+    'BPGT-2026-V011': { 
+        store: "ZAMBALES", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "SARI-SARI-STORE (PEDDLER)",
+        ca: "2026-FABC-6"
+    },
+    'BPGT-2026-V012': { 
+        store: "ARQUERO", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "EATERY (PEDDLER)",
+        ca: "2026-GABC-7"
+    },
+    'BPGT-2026-V013': { 
+        store: "LOTTO", 
+        proprietor: "JUAN DELA CRUZ", 
+        type: "AMUSEMENT",
+        ca: "2026-HABC-8"
     }
 };
 
@@ -269,7 +324,6 @@ function setDateTime() {
     document.getElementById('rental-time').value = now.toTimeString().slice(0,5);
 }
 
-// Show vendor info when BP number selected
 document.getElementById('bp-number').addEventListener('change', function() {
     const bpNumber = this.value;
     const infoDiv = document.getElementById('vendor-info');
@@ -277,12 +331,10 @@ document.getElementById('bp-number').addEventListener('change', function() {
     if (bpNumber && VENDORS[bpNumber]) {
         const vendor = VENDORS[bpNumber];
         
-        // Fill hidden fields
         document.getElementById('store-name').value = vendor.store;
         document.getElementById('proprietor').value = vendor.proprietor;
         document.getElementById('vendor-type').value = vendor.type;
         
-        // Show vendor info
         infoDiv.innerHTML = `
             <strong>✅ ${vendor.store}</strong>
             Owner: ${vendor.proprietor}<br>
@@ -296,7 +348,6 @@ document.getElementById('bp-number').addEventListener('change', function() {
     }
 });
 
-// Show/hide ticket section
 document.getElementById('payment-method').addEventListener('change', function() {
     const ticketSection = document.getElementById('ticket-section');
     if (this.value === 'Cash') {
@@ -306,7 +357,6 @@ document.getElementById('payment-method').addEventListener('change', function() 
     }
 });
 
-// Calculate ticket serial
 function calcTicketSerial() {
     const s10 = parseInt(document.getElementById('serial-10').value) || 0;
     const s5 = parseInt(document.getElementById('serial-5').value) || 0;
@@ -335,7 +385,6 @@ function calcTicketSerial() {
 document.getElementById('serial-10').addEventListener('input', calcTicketSerial);
 document.getElementById('serial-5').addEventListener('input', calcTicketSerial);
 
-// Form submission
 document.getElementById('vendor-form').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');
@@ -379,7 +428,7 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
                 setDateTime();
                 msg.style.display = 'none';
                 document.getElementById('vendor-info').style.display = 'none';
-                document.getElementById('ticket-section').style.display = 'none';
+                document.getElementById('ticket-section').style.display = 'block';
             }, 3000);
         } else {
             throw new Error(data.message || 'Failed');
@@ -394,7 +443,7 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
     }
 });
 
-console.log('✅ Vendor Rental System (Dropdown) loaded');
+console.log('✅ Vendor Rental System (13 Vendors) loaded');
 </script>
 </body>
 </html>
