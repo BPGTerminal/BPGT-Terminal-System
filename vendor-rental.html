@@ -398,6 +398,12 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
     const bpNumber = document.getElementById('bp-number').value;
     const vendor = VENDORS[bpNumber];
 
+    // DEBUG LOGGING - ADD THESE LINES
+    console.log('=== VENDOR FORM DEBUG ===');
+    console.log('BP Number:', bpNumber);
+    console.log('Vendor Object:', vendor);
+    console.log('Store Name:', vendor ? vendor.store : 'VENDOR NOT FOUND');
+
     const params = new URLSearchParams({
         bpNumber: bpNumber,
         storeName: vendor.store,
@@ -414,9 +420,17 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
         timestamp: new Date().toISOString()
     });
 
+    // DEBUG LOGGING - ADD THESE LINES
+    console.log('=== PARAMETERS BEING SENT ===');
+    console.log('Full URL:', CONFIG.VENDOR_API_URL + '?' + params.toString());
+    console.log('Parameters as object:', Object.fromEntries(params));
+
     try {
         const res = await fetch(CONFIG.VENDOR_API_URL + '?' + params.toString(), { method: 'GET' });
         const data = await res.json();
+
+        // DEBUG LOGGING - ADD THIS LINE
+        console.log('=== RESPONSE FROM GOOGLE ===', data);
 
         if (data.success) {
             msg.textContent = `✅ Submitted! ${vendor.store} · ₱10.00`;
@@ -434,6 +448,7 @@ document.getElementById('vendor-form').addEventListener('submit', async e => {
             throw new Error(data.message || 'Failed');
         }
     } catch(err) {
+        console.error('=== SUBMISSION ERROR ===', err);
         msg.textContent = '❌ Submission failed. Check connection.';
         msg.className = 'status-msg status-error';
         msg.style.display = 'block';
