@@ -12,7 +12,7 @@ const CONFIG = {
     VEHICLE_API_URL: 'https://script.google.com/macros/s/AKfycbygkZnFz-TtPcSdKKoISRUtYtiT0KGlVtHCy5quIercV2M8Cor-3MgrZzQrhM4NHVH8/exec',
     
     // Vendor Rental API (handles stall rental collection)
-    VENDOR_API_URL: 'https://script.google.com/macros/s/AKfycbxJyCZjQfJlLw1KeFHtUkGoXj-hV_A_t2ZrSMCQGsDBu-sXT7AyV4IRjDVMpQUJ5mUE/exec',
+    VENDOR_API_URL: 'https://script.google.com/macros/s/AKfycbwEIlG_hmEXP3R4fUiv_2cv6UISrSKjstDDNtmYStrZBIqagA9LRTBv7mi2xtJKkgf-/exec',
     
     // App settings
     APP_NAME: 'BPGT Terminal',
