@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPGT Terminal — Operations Summary</title>
+<style>
+  :root {
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-mid: #378ADD;
+    --teal: #0F6E56;
+    --teal-light: #E1F5EE;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --green: #3B6D11;
+    --green-light: #EAF3DE;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --gray-50: #F6F6F4;
+    --gray-100: #EDEDEA;
+    --gray-200: #D3D1C7;
+    --gray-500: #5F5E5A;
+    --gray-700: #2C2C2A;
+    --text: #1a1a18;
+    --text-muted: #5F5E5A;
+    --text-faint: #888780;
+    --border: rgba(0,0,0,0.1);
+    --border-light: rgba(0,0,0,0.06);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-50);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .header {
+    background: var(--blue);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-icon { width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .header-title { color: #fff; font-size: 15px; font-weight: 600; }
+  .header-sub { color: rgba(255,255,255,0.6); font-size: 11px; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .hbtn {
+    border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.12);
+    color: #fff; padding: 6px 13px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 5px;
+    transition: background 0.2s; white-space: nowrap;
+  }
+  .hbtn:hover { background: rgba(255,255,255,0.25); }
+  .hbtn.print-pdf { background: rgba(255,255,255,0.2); }
+  .hbtn.print-hard { background: rgba(255,255,255,0.2); }
+  #last-updated { font-size: 11px; color: rgba(255,255,255,0.45); white-space: nowrap; }
+
+  .filter-bar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 66px;
+    z-index: 99;
+  }
+  .filter-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-right: 2px; }
+  .period-btn {
+    padding: 5px 13px; border-radius: 20px; border: 1px solid var(--border);
+    background: #fff; cursor: pointer; font-size: 12px; color: var(--text-muted);
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .period-btn:hover { border-color: var(--blue-mid); color: var(--blue); }
+  .period-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 500; }
+  .date-input {
+    padding: 5px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    font-size: 12px; color: var(--text); background: #fff; display: none;
+  }
+  .date-input.visible { display: block; }
+  .filter-status { font-size: 11px; color: var(--text-faint); margin-left: auto; white-space: nowrap; }
+
+  .main { padding: 18px 24px; max-width: 1100px; margin: 0 auto; }
+
+  .status-msg {
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    font-size: 13px; margin-bottom: 16px; display: none; line-height: 1.5;
+  }
+  .status-msg.loading { background: var(--blue-light); color: var(--blue); display: block; }
+  .status-msg.error { background: var(--red-light); color: var(--red); display: block; }
+  .status-msg.warn { background: var(--amber-light); color: var(--amber); display: block; }
+
+  .section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-faint);
+    margin: 20px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px; margin-bottom: 4px;
+  }
+  .metric-card {
+    background: #fff; border: 1px solid var(--border-light);
+    border-radius: var(--radius); padding: 13px 15px; box-shadow: var(--shadow);
+  }
+  .metric-card.accent-blue { border-top: 3px solid var(--blue-mid); }
+  .metric-card.accent-teal { border-top: 3px solid #1D9E75; }
+  .metric-card.accent-amber { border-top: 3px solid #EF9F27; }
+  .metric-card.accent-green { border-top: 3px solid #639922; }
+  .metric-card.accent-red { border-top: 3px solid #E24B4A; }
+  .metric-label { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; font-weight: 500; }
+  .metric-value { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1; }
+  .metric-sub { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+
+  .card {
+    background: #fff; border: 1px solid var(--border-light);
+    border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text-faint); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .gender-track { height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; margin: 8px 0; }
+  .gender-fill { height: 100%; background: var(--blue-mid); border-radius: 4px; transition: width 0.6s ease; }
+  .gender-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint); }
+
+  .breakdown-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid var(--border-light); font-size: 12px;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-key { color: var(--text-muted); min-width: 70px; }
+  .breakdown-val { font-weight: 600; color: var(--text); white-space: nowrap; }
+  .breakdown-bar-wrap { flex: 1; margin: 0 8px; height: 4px; background: var(--gray-100); border-radius: 2px; overflow: hidden; }
+  .breakdown-bar { height: 100%; border-radius: 2px; }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 12px; font-size: 10px; font-weight: 500; }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-gray { background: var(--gray-100); color: var(--text-muted); }
+
+  .log-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  thead th {
+    text-align: left; padding: 7px 9px;
+    font-size: 10px; font-weight: 600; color: var(--text-faint);
+    border-bottom: 1px solid var(--border); background: var(--gray-50);
+    text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+  }
+  tbody td { padding: 7px 9px; border-bottom: 1px solid var(--border-light); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--gray-50); }
+  .no-data { text-align: center; padding: 24px; color: var(--text-faint); font-size: 12px; }
+
+  .summary-row {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+  }
+  .period-display { font-size: 16px; font-weight: 600; color: var(--text); }
+  .period-range { font-size: 12px; color: var(--text-faint); margin-top: 1px; }
+
+  .revenue-hero {
+    background: var(--teal);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    color: #fff;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    box-shadow: 0 4px 12px rgba(15,110,86,0.25);
+    margin-bottom: 4px;
+  }
+  .revenue-hero-label { font-size: 11px; opacity: 0.65; margin-bottom: 3px; }
+  .revenue-hero-amount { font-size: 34px; font-weight: 700; letter-spacing: -1px; }
+  .revenue-hero-sub { font-size: 11px; opacity: 0.55; margin-top: 3px; }
+  .revenue-breakdown { display: flex; gap: 18px; flex-wrap: wrap; }
+  .rev-item-label { font-size: 10px; opacity: 0.6; }
+  .rev-item-val { font-size: 16px; font-weight: 600; margin-top: 1px; }
+
+  .fix-box {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    margin-bottom: 16px; font-size: 13px; line-height: 1.7;
+  }
+  .fix-box h3 { font-size: 14px; color: var(--blue); margin-bottom: 8px; }
+  .fix-box code {
+    display: block; background: var(--gray-50); border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px 12px; font-family: monospace;
+    font-size: 12px; margin: 8px 0; white-space: pre-wrap; line-height: 1.6;
+    color: var(--gray-700);
+  }
+  .fix-box ol { padding-left: 18px; }
+  .fix-box li { margin-bottom: 4px; }
+
+  .footer {
+    text-align: center; padding: 20px; font-size: 11px;
+    color: var(--text-faint); border-top: 1px solid var(--border-light);
+    margin-top: 28px;
+  }
+
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    body { background: #fff; font-size: 11px; }
+    .header { position: static; background: #185FA5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: none; padding: 10px 16px; }
+    .filter-bar { display: none !important; }
+    .hbtn { display: none !important; }
+    #last-updated { display: none; }
+    .main { padding: 12px; max-width: 100%; }
+    .status-msg { display: none !important; }
+    .fix-box { display: none !important; }
+    .revenue-hero { background: #0F6E56 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .metric-card.accent-blue { border-top: 3px solid #378ADD !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .metric-card.accent-teal { border-top: 3px solid #1D9E75 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .metric-card.accent-amber { border-top: 3px solid #EF9F27 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .metric-card.accent-green { border-top: 3px solid #639922 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .metric-card.accent-red { border-top: 3px solid #E24B4A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breakdown-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge-green { background: #EAF3DE !important; color: #3B6D11 !important; }
+    .badge-amber { background: #FAEEDA !important; color: #BA7517 !important; }
+    .badge-gray { background: #EDEDEA !important; color: #5F5E5A !important; }
+    .two-col { grid-template-columns: 1fr 1fr; }
+    .three-col { grid-template-columns: 1fr 1fr 1fr; }
+    .metric-grid { grid-template-columns: repeat(4, 1fr); }
+    .card { box-shadow: none; border: 1px solid #ddd; }
+    .metric-card { box-shadow: none; border: 1px solid #ddd; }
+    .section-label { margin-top: 14px; }
+    table { font-size: 9px; }
+    thead th { font-size: 8px; }
+    tbody td { padding: 5px 7px; }
+    .log-wrap { overflow: visible; }
+    .footer { margin-top: 16px; font-size: 10px; }
+    @page {
+      margin: 1cm 1.2cm;
+      size: A4 landscape;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .main { padding: 14px; }
+    .header { padding: 10px 14px; }
+    .filter-bar { padding: 8px 14px; top: 58px; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .metric-value { font-size: 20px; }
+    .revenue-hero-amount { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🚌</div>
+    <div>
+      <div class="header-title">Brooke's Point Grand Terminal</div>
+      <div class="header-sub">Operations Summary Dashboard</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="last-updated">Not yet loaded</div>
+    <button class="hbtn" onclick="loadData()">
+      <span id="refresh-icon">↻</span> Refresh
+    </button>
+    <button class="hbtn print-pdf" onclick="printPDF()" title="Save as PDF">
+      📄 Save PDF
+    </button>
+    <button class="hbtn print-hard" onclick="printHard()" title="Print hard copy">
+      🖨️ Print
+    </button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Period:</span>
+  <button class="period-btn active" onclick="setPeriod('today',this)">Today</button>
+  <button class="period-btn" onclick="setPeriod('week',this)">This week</button>
+  <button class="period-btn" onclick="setPeriod('month',this)">This month</button>
+  <button class="period-btn" onclick="setPeriod('quarter',this)">This quarter</button>
+  <button class="period-btn" onclick="setPeriod('year',this)">This year</button>
+  <button class="period-btn" onclick="setPeriod('custom',this)">Date range</button>
+  <div id="range-inputs" class="date-input" style="display:none; align-items:center; gap:6px; padding:0;">
+    <input type="date" id="range-from" style="padding:5px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; color:var(--text);">
+    <span style="font-size:12px; color:var(--text-muted);">to</span>
+    <input type="date" id="range-to" style="padding:5px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; color:var(--text);">
+    <button onclick="applyFilter()" style="padding:5px 12px; background:var(--blue); color:#fff; border:none; border-radius:var(--radius-sm); font-size:12px; cursor:pointer; white-space:nowrap;">Apply</button>
+  </div>
+  <span class="filter-status" id="filter-status"></span>
+</div>
+
+<div class="main">
+  <div id="status-msg" class="status-msg loading">⏳ Loading terminal data...</div>
+
+  <div id="fix-instructions" class="fix-box" style="display:none;">
+    <h3>⚠️ CORS Fix Required — One-time setup on your Apps Script</h3>
+    <p>Your Apps Script needs to return CORS headers so this file can fetch data from a local browser. Add this to the <strong>top of your doGet() function</strong>:</p>
+    <code>function doGet(e) {
+  var output = ContentService.createTextOutput();
+
+  // Add these lines at the top of doGet:
+  var callback = e.parameter.callback;
+  var action = e.parameter.action;
+
+  // ... your existing logic here ...
+
+  // When returning data, wrap it like this:
+  var jsonData = JSON.stringify(yourDataArray);
+  if (callback) {
+    // JSONP response for cross-origin
+    output.setContent(callback + '(' + jsonData + ')');
+    output.setMimeType(ContentService.MimeType.JAVASCRIPT);
+  } else {
+    output.setContent(jsonData);
+    output.setMimeType(ContentService.MimeType.JSON);
+  }
+  return output;
+}</code>
+    <p><strong>Steps:</strong></p>
+    <ol>
+      <li>Open your Apps Script project</li>
+      <li>Update your <code>doGet()</code> as shown above</li>
+      <li>Click <strong>Deploy → Manage deployments → New deployment</strong></li>
+      <li>Set Execute as: <strong>Me</strong> · Who has access: <strong>Anyone</strong></li>
+      <li>Copy the new URL and paste it in the box below, then click Set URL</li>
+    </ol>
+    <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+      <input type="text" id="url-input" placeholder="Paste new Apps Script URL here..." style="flex:1; padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; min-width:200px;">
+      <button onclick="setNewURL()" style="padding:7px 14px; background:var(--blue); color:#fff; border:none; border-radius:var(--radius-sm); cursor:pointer; font-size:12px;">Set URL &amp; Retry</button>
+    </div>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+
+    <div class="summary-row">
+      <div>
+        <div class="period-display" id="period-display">Today</div>
+        <div class="period-range" id="period-range"></div>
+      </div>
+      <div style="font-size:11px; color:var(--text-faint);" id="print-timestamp"></div>
+    </div>
+
+    <div class="section-label">Revenue</div>
+    <div class="revenue-hero">
+      <div>
+        <div class="revenue-hero-label">Total revenue collected</div>
+        <div class="revenue-hero-amount" id="rev-total">₱0</div>
+        <div class="revenue-hero-sub" id="rev-sub">0 paid transactions</div>
+      </div>
+      <div class="revenue-breakdown">
+        <div><div class="rev-item-label">Cash</div><div class="rev-item-val" id="rev-cash">₱0</div></div>
+        <div><div class="rev-item-label">GCash</div><div class="rev-item-val" id="rev-gcash">₱0</div></div>
+        <div><div class="rev-item-label">Maya</div><div class="rev-item-val" id="rev-maya">₱0</div></div>
+        <div><div class="rev-item-label">Bank</div><div class="rev-item-val" id="rev-bank">₱0</div></div>
+      </div>
+    </div>
+
+    <div class="section-label">Financial overview</div>
+    <div class="metric-grid" style="margin-bottom:10px;">
+      <div class="metric-card accent-green">
+        <div class="metric-label">Paid</div>
+        <div class="metric-value" id="fin-paid">0</div>
+        <div class="metric-sub" id="fin-paid-amt">₱0 collected</div>
+      </div>
+      <div class="metric-card accent-amber">
+        <div class="metric-label">Unpaid</div>
+        <div class="metric-value" id="fin-unpaid">0</div>
+        <div class="metric-sub" id="fin-unpaid-amt">₱0 pending</div>
+      </div>
+      <div class="metric-card accent-red">
+        <div class="metric-label">Waived</div>
+        <div class="metric-value" id="fin-waived">0</div>
+        <div class="metric-sub" id="fin-waived-amt">₱0 forgone</div>
+      </div>
+      <div class="metric-card accent-blue">
+        <div class="metric-label">Avg fee / trip</div>
+        <div class="metric-value" id="fin-avg">₱0</div>
+        <div class="metric-sub">departures only</div>
+      </div>
+    </div>
+    <div class="two-col" style="margin-bottom:4px;">
+      <div class="card">
+        <div class="card-title">Payment methods</div>
+        <div id="payment-methods">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Payment status breakdown</div>
+        <div id="payment-status">—</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:18px;">Passenger statistics</div>
+    <div class="metric-grid" style="margin-bottom:10px;">
+      <div class="metric-card accent-blue">
+        <div class="metric-label">Total trips</div>
+        <div class="metric-value" id="m-trips">0</div>
+        <div class="metric-sub" id="m-trips-sub"></div>
+      </div>
+      <div class="metric-card accent-blue">
+        <div class="metric-label">Total passengers</div>
+        <div class="metric-value" id="m-pax">0</div>
+        <div class="metric-sub" id="m-avgpax"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Adults</div>
+        <div class="metric-value" id="m-adults">0</div>
+        <div class="metric-sub" id="m-adults-pct"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Children</div>
+        <div class="metric-value" id="m-children">0</div>
+        <div class="metric-sub" id="m-children-pct"></div>
+      </div>
+      <div class="metric-card accent-teal">
+        <div class="metric-label">Seniors</div>
+        <div class="metric-value" id="m-seniors">0</div>
+        <div class="metric-sub" id="m-seniors-pct"></div>
+      </div>
+      <div class="metric-card accent-teal">
+        <div class="metric-label">PWD</div>
+        <div class="metric-value" id="m-pwd">0</div>
+        <div class="metric-sub" id="m-pwd-pct"></div>
+      </div>
+      <div class="metric-card accent-amber">
+        <div class="metric-label">Pregnant</div>
+        <div class="metric-value" id="m-preg">0</div>
+        <div class="metric-sub" id="m-preg-pct"></div>
+      </div>
+    </div>
+    <div class="three-col" style="margin-bottom:4px;">
+      <div class="card">
+        <div class="card-title">Gender split</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+          <span id="g-male-val" style="color:var(--blue);font-weight:600;">M: 0</span>
+          <span id="g-female-val" style="color:#D4537E;font-weight:600;">F: 0</span>
+        </div>
+        <div class="gender-track"><div class="gender-fill" id="gender-bar" style="width:50%;"></div></div>
+        <div class="gender-labels"><span>Male</span><span>Female</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Vehicle types</div>
+        <div id="vehicle-breakdown">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Routes served</div>
+        <div id="route-list">—</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:18px;">Staff performance</div>
+    <div class="two-col" style="margin-bottom:4px;">
+      <div class="card">
+        <div class="card-title">Trips by collector</div>
+        <div id="collector-list">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Revenue by collector</div>
+        <div id="collector-revenue">—</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:18px;">Trip log <span id="log-count" style="font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+    <div class="card">
+      <div class="log-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Time</th><th>Plate</th><th>Type</th><th>Route</th>
+              <th>Transport</th><th>Pax</th><th>Fee (₱)</th><th>Method</th>
+              <th>Status</th><th>Collector</th>
+            </tr>
+          </thead>
+          <tbody id="trip-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer" id="footer">
+  BPGT Terminal Monitoring System v4.4 · Brooke's Point Grand Terminal, Palawan<br>
+  Built by Joey S. Heredero · -=pagong=- · 2026
+</div>
+
+<script>
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7jGjhJ_Ca59EYk8iHkYCzvnLfv5pDJzkexqUR-d6VLfP21mXU3xEhdecwBFJgB4dL/exec';
+var allRows = [];
+var currentPeriod = 'today';
+
+/* ── PRINT / PDF ── */
+function printPDF() {
+  setTimestamp();
+  var style = document.createElement('style');
+  style.id = 'pdf-hint';
+  style.textContent = '@page { size: A4 landscape; margin: 1cm 1.2cm; }';
+  document.head.appendChild(style);
+  window.print();
+  setTimeout(function(){ var s=document.getElementById('pdf-hint'); if(s) s.remove(); }, 2000);
+}
+
+function printHard() {
+  setTimestamp();
+  window.print();
+}
+
+function setTimestamp() {
+  var now = phNow();
+  var ts = 'Printed: ' + now.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+           + ' · ' + now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('print-timestamp').textContent = ts;
+}
+
+/* ── DATE HELPERS ── */
+function phNow() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
+}
+
+/* ── PERIOD FILTER ── */
+function setPeriod(period, btn) {
+  currentPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var rangeDiv = document.getElementById('range-inputs');
+  if (period === 'custom') {
+    rangeDiv.style.display = 'flex';
+    var now = phNow();
+    var todayStr = now.getFullYear() + '-' +
+      String(now.getMonth()+1).padStart(2,'0') + '-' +
+      String(now.getDate()).padStart(2,'0');
+    if (!document.getElementById('range-from').value) document.getElementById('range-from').value = todayStr;
+    if (!document.getElementById('range-to').value) document.getElementById('range-to').value = todayStr;
+    applyFilter();
+  } else {
+    rangeDiv.style.display = 'none';
+    applyFilter();
+  }
+}
+
+function parseRowDate(r) {
+  var raw = r['TRIP DATE'] || r['Trip Date'] || r['date'] || '';
+  if (!raw) return null;
+  var s = String(raw).trim();
+  var m;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return new Date(+m[3], +m[1]-1, +m[2]);
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  var d = new Date(s); if (!isNaN(d)) return d;
+  return null;
+}
+
+function filterRows(rows, period) {
+  var now = phNow();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (period === 'today') {
+    return rows.filter(function(r){
+      var d=parseRowDate(r);
+      return d && d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth() && d.getDate()===today.getDate();
+    });
+  }
+  if (period === 'week') {
+    var ws = new Date(today); ws.setDate(today.getDate()-today.getDay());
+    return rows.filter(function(r){ var d=parseRowDate(r); return d && d>=ws && d<=now; });
+  }
+  if (period === 'month') {
+    return rows.filter(function(r){
+      var d=parseRowDate(r);
+      return d && d.getFullYear()===today.getFullYear() && d.getMonth()===today.getMonth();
+    });
+  }
+  if (period === 'quarter') {
+    var q=Math.floor(today.getMonth()/3);
+    var qs=new Date(today.getFullYear(),q*3,1);
+    return rows.filter(function(r){ var d=parseRowDate(r); return d && d>=qs && d<=now; });
+  }
+  if (period === 'year') {
+    return rows.filter(function(r){ var d=parseRowDate(r); return d && d.getFullYear()===today.getFullYear(); });
+  }
+  if (period === 'custom') {
+    var fromVal = document.getElementById('range-from').value;
+    var toVal   = document.getElementById('range-to').value;
+    if (!fromVal && !toVal) return rows;
+    var fromParts = fromVal ? fromVal.split('-').map(Number) : null;
+    var toParts   = toVal   ? toVal.split('-').map(Number)   : null;
+    var fromDate  = fromParts ? new Date(fromParts[0], fromParts[1]-1, fromParts[2], 0, 0, 0) : null;
+    var toDate    = toParts   ? new Date(toParts[0],   toParts[1]-1,   toParts[2],  23,59,59) : null;
+    return rows.filter(function(r){
+      var d = parseRowDate(r);
+      if (!d) return false;
+      if (fromDate && d < fromDate) return false;
+      if (toDate   && d > toDate)   return false;
+      return true;
+    });
+  }
+  return rows;
+}
+
+function getPeriodLabel() {
+  var now=phNow();
+  if (currentPeriod==='today') return { label:'Today', range: fmtDate(now) };
+  if (currentPeriod==='week') {
+    var ws=new Date(now); ws.setDate(now.getDate()-now.getDay());
+    return { label:'This week', range: fmtDate(ws)+' – '+fmtDate(now) };
+  }
+  if (currentPeriod==='month') return { label:'This month', range: now.toLocaleDateString('en-PH',{month:'long',year:'numeric'}) };
+  if (currentPeriod==='quarter') {
+    var q=Math.floor(now.getMonth()/3)+1;
+    return { label:'Q'+q+' '+now.getFullYear(), range:'Quarter '+q+' · '+now.getFullYear() };
+  }
+  if (currentPeriod==='year') return { label: String(now.getFullYear()), range:'Full year' };
+  if (currentPeriod==='custom') {
+    var fv = document.getElementById('range-from').value;
+    var tv = document.getElementById('range-to').value;
+    var fl = fv ? fmtDate(new Date(fv+'T00:00:00')) : '—';
+    var tl = tv ? fmtDate(new Date(tv+'T00:00:00')) : '—';
+    var label = fv===tv ? fl : fl+' – '+tl;
+    return { label: label, range: 'Date range' };
+  }
+  return { label:'All records', range:'' };
+}
+
+function applyFilter() {
+  if (allRows.length===0) return;
+  var rows=filterRows(allRows, currentPeriod);
+  document.getElementById('filter-status').textContent = rows.length + ' record' + (rows.length!==1?'s':'');
+  renderDashboard(rows);
+}
+
+/* ── HELPERS ── */
+function g(row) {
+  for (var i=1;i<arguments.length;i++){
+    var k=arguments[i];
+    if (row[k]!==undefined && row[k]!=='') return parseFloat(row[k])||0;
+  }
+  return 0;
+}
+function gs(row) {
+  for (var i=1;i<arguments.length;i++){
+    var k=arguments[i];
+    if (row[k]!==undefined && row[k]!=='') return String(row[k]).trim();
+  }
+  return '';
+}
+function peso(n){ return '₱'+Math.round(n).toLocaleString('en-PH'); }
+function pct(n,t){ return t>0?'('+Math.round(n/t*100)+'%)':''; }
+function setEl(id,val){ var e=document.getElementById(id); if(e) e.textContent=val; }
+
+function renderBreakdownRows(containerId, data, maxVal, color) {
+  var el=document.getElementById(containerId); if(!el) return;
+  var sorted=Object.entries(data).sort(function(a,b){return b[1]-a[1];});
+  if(sorted.length===0){el.innerHTML='<div class="no-data">No data</div>';return;}
+  el.innerHTML=sorted.map(function(e){
+    var k=e[0],v=e[1];
+    var bp=maxVal>0?Math.round(v/maxVal*100):0;
+    return '<div class="breakdown-row"><span class="breakdown-key">'+k+'</span>'+
+      '<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+bp+'%;background:'+color+';"></div></div>'+
+      '<span class="breakdown-val">'+v.toLocaleString('en-PH')+'</span></div>';
+  }).join('');
+}
+
+/* ── RENDER ── */
+function renderDashboard(rows) {
+  var lbl=getPeriodLabel();
+  setEl('period-display', lbl.label);
+  setEl('period-range', lbl.range);
+
+  var trips=rows.length, totalPax=0, adults=0, children=0, seniors=0, pwd=0, preg=0, males=0, females=0;
+  var departures=0, arrivals=0;
+  var vehicles={}, routes={}, collectors={}, collRevenue={};
+  var paidFee=0, unpaidFee=0, waivedFee=0;
+  var paidCount=0, unpaidCount=0, waivedCount=0;
+  var payMethodAmt={Cash:0,GCash:0,Maya:0,'Bank Transfer':0};
+  var payMethodCnt={Cash:0,GCash:0,Maya:0,'Bank Transfer':0};
+
+  rows.forEach(function(r){
+    totalPax += g(r,'TOTAL PASSENGERS','Total Passengers','total_passengers');
+    adults   += g(r,'ADULTS','Adults');
+    children += g(r,'CHILDREN','Children');
+    seniors  += g(r,'SENIORS','Seniors');
+    pwd      += g(r,'PWDs','PWD','pwd');
+    preg     += g(r,'PREG.F.','Pregnant','preg','PREGNANT');
+    males    += g(r,'MALES','Males');
+    females  += g(r,'FEMALES','Females');
+
+    var type=gs(r,'TYPE','Type','DENOMINATION','Denomination')||'Unknown';
+    var tripType=gs(r,'TRIP TYPE','Trip Type')||'';
+    if(tripType.toLowerCase().indexOf('dep')>-1) departures++;
+    else if(tripType.toLowerCase().indexOf('arr')>-1) arrivals++;
+
+    vehicles[type]=(vehicles[type]||0)+1;
+
+    var route=gs(r,'ROUTE','Route')||'N/A';
+    routes[route]=(routes[route]||0)+1;
+
+    var collector=gs(r,'COLLECTOR','collector','USERNAME','Username','staff','STAFF','Staff')||'Unknown';
+    collectors[collector]=(collectors[collector]||0)+1;
+
+    var fee=g(r,'FEE','fee','AMOUNT','Amount','Terminal Fee','terminal_fee','TERMINAL FEE');
+    var status=gs(r,'PAYMENT STATUS','Payment Status','STATUS','status')||'';
+    var method=gs(r,'PAYMENT METHOD','Payment Method','METHOD','method')||'';
+    var sl=status.toLowerCase();
+
+    if(sl.indexOf('paid')>-1 && sl.indexOf('un')===-1){
+      paidFee+=fee; paidCount++;
+      collRevenue[collector]=(collRevenue[collector]||0)+fee;
+      var mkeys=Object.keys(payMethodAmt);
+      var matched=false;
+      for(var i=0;i<mkeys.length;i++){
+        if(method.toLowerCase().indexOf(mkeys[i].toLowerCase())>-1){
+          payMethodAmt[mkeys[i]]+=fee; payMethodCnt[mkeys[i]]++;
+          matched=true; break;
+        }
+      }
+      if(!matched && method){
+        payMethodAmt[method]=(payMethodAmt[method]||0)+fee;
+        payMethodCnt[method]=(payMethodCnt[method]||0)+1;
+      }
+    } else if(sl.indexOf('unpaid')>-1){
+      unpaidFee+=fee; unpaidCount++;
+    } else if(sl.indexOf('waiv')>-1){
+      waivedFee+=fee; waivedCount++;
+    }
+  });
+
+  /* REVENUE HERO */
+  setEl('rev-total', peso(paidFee));
+  setEl('rev-sub', paidCount+' paid transaction'+(paidCount!==1?'s':''));
+  setEl('rev-cash', peso(payMethodAmt['Cash']||0));
+  setEl('rev-gcash', peso(payMethodAmt['GCash']||0));
+  setEl('rev-maya', peso(payMethodAmt['Maya']||0));
+  setEl('rev-bank', peso(payMethodAmt['Bank Transfer']||0));
+
+  /* FIN METRICS */
+  setEl('fin-paid', paidCount.toLocaleString('en-PH'));
+  setEl('fin-paid-amt', peso(paidFee)+' collected');
+  setEl('fin-unpaid', unpaidCount.toLocaleString('en-PH'));
+  setEl('fin-unpaid-amt', peso(unpaidFee)+' pending');
+  setEl('fin-waived', waivedCount.toLocaleString('en-PH'));
+  setEl('fin-waived-amt', peso(waivedFee)+' forgone');
+  setEl('fin-avg', paidCount>0?peso(Math.round(paidFee/paidCount)):'₱0');
+
+  /* PAYMENT METHODS */
+  var pmEl=document.getElementById('payment-methods');
+  var pmAll=Object.entries(payMethodAmt).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+  var pmMax=pmAll.length>0?pmAll[0][1]:1;
+  pmEl.innerHTML=pmAll.length===0?'<div class="no-data">No payment data</div>':pmAll.map(function(e){
+    var k=e[0],v=e[1],cnt=payMethodCnt[k]||0;
+    return '<div class="breakdown-row"><span class="breakdown-key">'+k+'</span>'+
+      '<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+Math.round(v/pmMax*100)+'%;background:#1D9E75;"></div></div>'+
+      '<span class="breakdown-val">'+peso(v)+' <span style="font-size:10px;color:var(--text-faint)">('+cnt+')</span></span></div>';
+  }).join('');
+
+  /* PAYMENT STATUS */
+  var psTotal=paidCount+unpaidCount+waivedCount||1;
+  document.getElementById('payment-status').innerHTML=
+    '<div class="breakdown-row"><span class="breakdown-key"><span class="badge badge-green">Paid</span></span>'+
+    '<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+Math.round(paidCount/psTotal*100)+'%;background:#639922;"></div></div>'+
+    '<span class="breakdown-val">'+paidCount.toLocaleString('en-PH')+'</span></div>'+
+    '<div class="breakdown-row"><span class="breakdown-key"><span class="badge badge-amber">Unpaid</span></span>'+
+    '<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+Math.round(unpaidCount/psTotal*100)+'%;background:#EF9F27;"></div></div>'+
+    '<span class="breakdown-val">'+unpaidCount.toLocaleString('en-PH')+'</span></div>'+
+    '<div class="breakdown-row"><span class="breakdown-key"><span class="badge badge-gray">Waived</span></span>'+
+    '<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+Math.round(waivedCount/psTotal*100)+'%;background:#888780;"></div></div>'+
+    '<span class="breakdown-val">'+waivedCount.toLocaleString('en-PH')+'</span></div>';
+
+  /* PAX METRICS */
+  setEl('m-trips', trips.toLocaleString('en-PH'));
+  setEl('m-trips-sub', departures>0||arrivals>0 ? departures+' dep / '+arrivals+' arr':'');
+  setEl('m-pax', totalPax.toLocaleString('en-PH'));
+  setEl('m-avgpax', 'avg '+(trips>0?Math.round(totalPax/trips):0)+' per trip');
+  setEl('m-adults', adults.toLocaleString('en-PH')); setEl('m-adults-pct',pct(adults,totalPax));
+  setEl('m-children', children.toLocaleString('en-PH')); setEl('m-children-pct',pct(children,totalPax));
+  setEl('m-seniors', seniors.toLocaleString('en-PH')); setEl('m-seniors-pct',pct(seniors,totalPax));
+  setEl('m-pwd', pwd.toLocaleString('en-PH')); setEl('m-pwd-pct',pct(pwd,totalPax));
+  setEl('m-preg', preg.toLocaleString('en-PH')); setEl('m-preg-pct',pct(preg,totalPax));
+
+  /* GENDER */
+  var gt=males+females||1, mp=Math.round(males/gt*100);
+  document.getElementById('gender-bar').style.width=mp+'%';
+  setEl('g-male-val','M: '+males.toLocaleString('en-PH')+' ('+mp+'%)');
+  setEl('g-female-val','F: '+females.toLocaleString('en-PH')+' ('+(100-mp)+'%)');
+
+  /* VEHICLE / ROUTE */
+  var maxV=Math.max.apply(null,Object.values(vehicles).concat([1]));
+  var maxR=Math.max.apply(null,Object.values(routes).concat([1]));
+  renderBreakdownRows('vehicle-breakdown',vehicles,maxV,'#378ADD');
+  renderBreakdownRows('route-list',routes,maxR,'#1D9E75');
+
+  /* COLLECTORS */
+  var maxC=Math.max.apply(null,Object.values(collectors).concat([1]));
+  renderBreakdownRows('collector-list',collectors,maxC,'#7F77DD');
+  var crSorted=Object.entries(collRevenue).sort(function(a,b){return b[1]-a[1];});
+  var maxCR=crSorted.length>0?crSorted[0][1]:1;
+  document.getElementById('collector-revenue').innerHTML=crSorted.length===0?
+    '<div class="no-data">No revenue data</div>':
+    crSorted.map(function(e){
+      var k=e[0],v=e[1];
+      return '<div class="breakdown-row"><span class="breakdown-key">'+k+'</span>'+
+        '<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+Math.round(v/maxCR*100)+'%;background:#EF9F27;"></div></div>'+
+        '<span class="breakdown-val">'+peso(v)+'</span></div>';
+    }).join('');
+
+  /* TRIP LOG */
+  var displayed=rows.slice().reverse().slice(0,50);
+  setEl('log-count','('+displayed.length+' of '+rows.length+' records)');
+  var tbody=document.getElementById('trip-tbody');
+  if(displayed.length===0){
+    tbody.innerHTML='<tr><td colspan="11" class="no-data">No trips found for this period.</td></tr>';
+  } else {
+    tbody.innerHTML=displayed.map(function(r){
+      var date=gs(r,'TRIP DATE','Trip Date','date');
+      var time=gs(r,'TRIP TIME','Trip Time','time');
+      var plate=gs(r,'VEHICLE PLATE NUMBER','Plate','plate');
+      var type=gs(r,'TYPE','Type','DENOMINATION','Denomination');
+      var route=gs(r,'ROUTE','Route');
+      var transport=gs(r,'TRANSPORT','Transport','Group');
+      var pax=g(r,'TOTAL PASSENGERS','Total Passengers')||'';
+      var fee=g(r,'FEE','fee','AMOUNT','Amount','Terminal Fee','terminal_fee','TERMINAL FEE');
+      var method=gs(r,'PAYMENT METHOD','Payment Method','METHOD','method');
+      var status=gs(r,'PAYMENT STATUS','Payment Status','STATUS','status');
+      var collector=gs(r,'COLLECTOR','collector','USERNAME','Username','staff','STAFF','Staff');
+      var sl=status.toLowerCase();
+      var sb=sl.indexOf('paid')>-1&&sl.indexOf('un')===-1?'<span class="badge badge-green">Paid</span>':
+             sl.indexOf('unpaid')>-1?'<span class="badge badge-amber">Unpaid</span>':
+             sl.indexOf('waiv')>-1?'<span class="badge badge-gray">Waived</span>':
+             status?'<span class="badge badge-gray">'+status+'</span>':'—';
+      return '<tr><td>'+date+'</td><td>'+time+'</td><td style="font-weight:600;">'+
+        (plate||'—')+'</td><td>'+type+'</td><td>'+route+'</td><td>'+transport+
+        '</td><td style="text-align:center;">'+(pax||'—')+'</td><td style="font-weight:600;">'+
+        (fee>0?peso(fee):'—')+'</td><td>'+(method||'—')+'</td><td>'+sb+'</td><td>'+
+        (collector||'—')+'</td></tr>';
+    }).join('');
+  }
+
+  document.getElementById('dashboard').style.display='block';
+}
+
+/* ── FETCH with JSONP fallback ── */
+function setNewURL() {
+  var newUrl = document.getElementById('url-input').value.trim();
+  if (newUrl) { SCRIPT_URL = newUrl; loadData(); }
+}
+
+function fetchWithJSONP(url) {
+  return new Promise(function(resolve, reject){
+    var cbName = 'bpgt_cb_' + Date.now();
+    var script = document.createElement('script');
+    var timer = setTimeout(function(){
+      delete window[cbName];
+      document.body.removeChild(script);
+      reject(new Error('JSONP timeout'));
+    }, 15000);
+    window[cbName] = function(data){
+      clearTimeout(timer);
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(data);
+    };
+    script.src = url + (url.indexOf('?')>-1?'&':'?') + 'callback=' + cbName + '&t=' + Date.now();
+    script.onerror = function(){
+      clearTimeout(timer);
+      delete window[cbName];
+      reject(new Error('Script load failed'));
+    };
+    document.body.appendChild(script);
+  });
+}
+
+async function loadData() {
+  var statusEl=document.getElementById('status-msg');
+  var icon=document.getElementById('refresh-icon');
+  statusEl.className='status-msg loading';
+  statusEl.textContent='⏳ Fetching data from BPGT Google Sheets...';
+  statusEl.style.display='block';
+  document.getElementById('fix-instructions').style.display='none';
+  icon.innerHTML='<span class="spinner"></span>';
+
+  var success = false;
+
+  /* Try 1: normal fetch */
+  try {
+    var res = await fetch(SCRIPT_URL + '?action=getAll&t=' + Date.now());
+    var json = await res.json();
+    var rows = Array.isArray(json) ? json : (json.data||json.rows||[]);
+    if (rows.length > 0) { allRows=rows; success=true; }
+    else if (Array.isArray(json) && json.length===0) { allRows=[]; success=true; }
+  } catch(e1) {
+    /* Try 2: JSONP */
+    try {
+      var data = await fetchWithJSONP(SCRIPT_URL + '?action=getAll');
+      var rows2 = Array.isArray(data) ? data : (data.data||data.rows||[]);
+      allRows=rows2; success=true;
+    } catch(e2) {
+      /* Try 3: no-cors published sheet CSV */
+      try {
+        var csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdcGJonwBUYArAF6zrmpf9-8tW5ZILbt3clwii1TixH3fl0UquRsCOreXDHJJlD99ioGHlhaeV_raQ/pub?output=csv&t=' + Date.now();
+        var csvRes = await fetch(csvUrl);
+        var csvText = await csvRes.text();
+        allRows = parseCSV(csvText);
+        if (allRows.length > 0) success=true;
+      } catch(e3) {
+        success=false;
+      }
+    }
+  }
+
+  if (success) {
+    statusEl.style.display='none';
+    setEl('last-updated','Updated '+new Date().toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit'}));
+    applyFilter();
+  } else {
+    statusEl.className='status-msg error';
+    statusEl.textContent='⚠️ Could not load data automatically. See fix instructions below.';
+    document.getElementById('fix-instructions').style.display='block';
+    document.getElementById('dashboard').style.display='none';
+  }
+
+  icon.textContent='↻';
+}
+
+function parseCSV(text) {
+  var lines = text.split('\n').filter(function(l){ return l.trim(); });
+  if (lines.length < 2) return [];
+  var headers = lines[0].split(',').map(function(h){ return h.replace(/^"|"$/g,'').trim(); });
+  return lines.slice(1).map(function(line){
+    var cols = [], cur='', inQ=false;
+    for (var i=0;i<line.length;i++){
+      var c=line[i];
+      if(c==='"'){ inQ=!inQ; }
+      else if(c===','&&!inQ){ cols.push(cur.trim()); cur=''; }
+      else { cur+=c; }
+    }
+    cols.push(cur.trim());
+    var obj={};
+    headers.forEach(function(h,i){ obj[h]=cols[i]||''; });
+    return obj;
+  });
+}
+
+loadData();
+</script>
+</body>
+</html>
