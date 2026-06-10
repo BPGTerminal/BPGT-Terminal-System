@@ -441,23 +441,33 @@
     </div>
 
     <div class="three-col" style="margin-bottom:4px;">
-      <div class="card">
-        <div class="card-title">Gender split</div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
-          <span id="g-male-val" style="color:var(--blue);font-weight:600;">M: 0</span>
-          <span id="g-female-val" style="color:#D4537E;font-weight:600;">F: 0</span>
-        </div>
-        <div class="gender-track"><div class="gender-fill" id="gender-bar" style="width:50%;"></div></div>
-        <div class="gender-labels"><span>Male</span><span>Female</span></div>
+
+      <!-- GENDER PIE CHART -->
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;">
+        <div class="card-title" style="align-self:flex-start;">Gender split</div>
+        <canvas id="gender-pie" width="160" height="160" style="margin:4px auto 8px;"></canvas>
+        <div id="gender-pie-legend" style="font-size:12px;width:100%;"></div>
       </div>
-      <div class="card">
-        <div class="card-title">Vehicle types</div>
-        <div id="vehicle-breakdown">—</div>
+
+      <!-- VEHICLE TYPE PIE CHART -->
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;">
+        <div class="card-title" style="align-self:flex-start;">Vehicle types</div>
+        <canvas id="vehicle-pie" width="160" height="160" style="margin:4px auto 8px;"></canvas>
+        <div id="vehicle-pie-legend" style="font-size:12px;width:100%;"></div>
       </div>
+
+      <!-- ROUTES SERVED with top 10 + dropdown -->
       <div class="card">
         <div class="card-title">Routes served</div>
-        <div id="route-list">—</div>
+        <div id="route-list-top"></div>
+        <div id="route-more-wrap" style="display:none;">
+          <div id="route-list-more"></div>
+        </div>
+        <button id="route-toggle-btn" onclick="toggleRoutes()" style="display:none;margin-top:8px;width:100%;padding:6px;background:var(--gray-50);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text-muted);">
+          ▼ Show more routes
+        </button>
       </div>
+
     </div>
 
     <div class="section-label" style="margin-top:18px;">Staff performance</div>
@@ -813,17 +823,24 @@ function renderDashboard(rows) {
   renderPaxChart(totalPax, adults, children, seniors, pwd, preg,
     g_am, g_af, g_cm, g_cf, g_sm, g_sf, g_pm, g_pf);
 
-  /* GENDER */
-  var gt=males+females||1, mp=Math.round(males/gt*100);
-  document.getElementById('gender-bar').style.width=mp+'%';
-  setEl('g-male-val','M: '+males.toLocaleString('en-PH')+' ('+mp+'%)');
-  setEl('g-female-val','F: '+females.toLocaleString('en-PH')+' ('+(100-mp)+'%)');
+  /* GENDER PIE */
+  drawPie('gender-pie', [
+    { label:'Male',   val:males,   color:'#378ADD' },
+    { label:'Female', val:females, color:'#E2608A' }
+  ], 'gender-pie-legend');
 
-  /* VEHICLE / ROUTE */
-  var maxV=Math.max.apply(null,Object.values(vehicles).concat([1]));
-  var maxR=Math.max.apply(null,Object.values(routes).concat([1]));
-  renderBreakdownRows('vehicle-breakdown',vehicles,maxV,'#378ADD');
-  renderBreakdownRows('route-list',routes,maxR,'#1D9E75');
+  /* VEHICLE PIE */
+  var vEntries = Object.entries(vehicles).sort(function(a,b){return b[1]-a[1];});
+  drawPie('vehicle-pie',
+    vEntries.map(function(e,i){
+      var colors=['#378ADD','#1D9E75','#EF9F27','#7F77DD','#E2608A','#E24B4A','#639922'];
+      return { label:e[0], val:e[1], color:colors[i%colors.length] };
+    }),
+    'vehicle-pie-legend'
+  );
+
+  /* ROUTES — top 10 + rest in dropdown */
+  renderRoutes(routes);
 
   /* COLLECTORS */
   var maxC=Math.max.apply(null,Object.values(collectors).concat([1]));
@@ -874,6 +891,113 @@ function renderDashboard(rows) {
   document.getElementById('dashboard').style.display='block';
 }
 
+
+
+/* ── PIE CHART DRAWER ── */
+function drawPie(canvasId, segments, legendId) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  var total = segments.reduce(function(s,x){return s+x.val;},0);
+  if (total === 0) {
+    var ctx2 = canvas.getContext('2d');
+    ctx2.clearRect(0,0,canvas.width,canvas.height);
+    ctx2.fillStyle='#ccc';
+    ctx2.beginPath(); ctx2.arc(80,80,70,0,Math.PI*2); ctx2.fill();
+    ctx2.fillStyle='#fff'; ctx2.font='12px sans-serif'; ctx2.textAlign='center';
+    ctx2.fillText('No data',80,84);
+    if (legendId) document.getElementById(legendId).innerHTML='';
+    return;
+  }
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  var cx=80, cy=80, r=72, startAngle=-Math.PI/2;
+  segments.forEach(function(seg) {
+    if (seg.val===0) return;
+    var slice = (seg.val/total)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,startAngle,startAngle+slice);
+    ctx.closePath();
+    ctx.fillStyle=seg.color;
+    ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    startAngle+=slice;
+  });
+  // Center hole (donut)
+  ctx.beginPath(); ctx.arc(cx,cy,38,0,Math.PI*2);
+  ctx.fillStyle='#fff'; ctx.fill();
+  // Center total
+  ctx.fillStyle='#1a1a18'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(total.toLocaleString('en-PH'),cx,cy-2);
+  ctx.fillStyle='#888780'; ctx.font='10px sans-serif';
+  ctx.fillText('total',cx,cy+12);
+  // Legend
+  if (legendId) {
+    var leg=document.getElementById(legendId);
+    leg.innerHTML=segments.filter(function(s){return s.val>0;}).map(function(s){
+      var pct=Math.round(s.val/total*100);
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border-light);">'+
+        '<span style="display:flex;align-items:center;gap:6px;">'+
+          '<span style="width:10px;height:10px;border-radius:50%;background:'+s.color+';flex-shrink:0;display:inline-block;"></span>'+
+          '<span style="color:var(--text-muted);">'+s.label+'</span>'+
+        '</span>'+
+        '<span style="font-weight:600;color:var(--text);">'+s.val.toLocaleString('en-PH')+
+          ' <span style="color:var(--text-faint);font-weight:400;">('+pct+'%)</span></span>'+
+      '</div>';
+    }).join('');
+  }
+}
+
+/* ── ROUTES RENDERER — top 10 + dropdown ── */
+var _allRoutes = {};
+function renderRoutes(routes) {
+  _allRoutes = routes;
+  var sorted = Object.entries(routes).sort(function(a,b){return b[1]-a[1];});
+  var top10 = sorted.slice(0,10);
+  var rest  = sorted.slice(10);
+  var maxR  = sorted.length>0 ? sorted[0][1] : 1;
+
+  function makeRow(k,v) {
+    var bp=Math.round(v/maxR*100);
+    return '<div class="breakdown-row">'+
+      '<span class="breakdown-key" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+k+'">'+k+'</span>'+
+      '<div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:'+bp+'%;background:#1D9E75;"></div></div>'+
+      '<span class="breakdown-val">'+v+'</span></div>';
+  }
+
+  var topEl = document.getElementById('route-list-top');
+  var moreEl = document.getElementById('route-list-more');
+  var btn = document.getElementById('route-toggle-btn');
+
+  if (topEl) topEl.innerHTML = top10.map(function(e){return makeRow(e[0],e[1]);}).join('');
+  if (moreEl) moreEl.innerHTML = rest.map(function(e){return makeRow(e[0],e[1]);}).join('');
+  if (btn) {
+    if (rest.length > 0) {
+      btn.style.display='block';
+      btn.textContent='▼ Show ' + rest.length + ' more route' + (rest.length!==1?'s':'');
+    } else {
+      btn.style.display='none';
+    }
+  }
+  // Reset collapse state
+  var wrap = document.getElementById('route-more-wrap');
+  if (wrap) wrap.style.display='none';
+  if (btn) btn.textContent = '▼ Show ' + rest.length + ' more route' + (rest.length!==1?'s':'');
+}
+
+function toggleRoutes() {
+  var wrap = document.getElementById('route-more-wrap');
+  var btn  = document.getElementById('route-toggle-btn');
+  var sorted = Object.entries(_allRoutes).sort(function(a,b){return b[1]-a[1];});
+  var restCount = Math.max(0, sorted.length - 10);
+  if (wrap.style.display==='none') {
+    wrap.style.display='block';
+    btn.textContent='▲ Show less';
+  } else {
+    wrap.style.display='none';
+    btn.textContent='▼ Show ' + restCount + ' more route' + (restCount!==1?'s':'');
+  }
+}
 
 /* ── PASSENGER BREAKDOWN CHARTS ── */
 function renderPaxChart(totalPax, adults, children, seniors, pwd, preg, am, af, cm, cf, sm, sf, pm, pf) {
