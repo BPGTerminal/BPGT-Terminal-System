@@ -908,32 +908,51 @@ async function loadData() {
   icon.innerHTML = '<span class="spinner"></span>';
 
   var success = false;
+  var debugLog = [];
 
-  /* PRIMARY: Google Visualization API — works from file:// with no CORS issues */
+  /* PRIMARY: Google Visualization API */
   try {
+    debugLog.push('Trying GViz Sheet1...');
+    statusEl.textContent = '⏳ Trying Google Sheets GViz API...';
     var rows = await fetchGViz('Sheet1');
-    // Also try without sheet name if Sheet1 returns empty
-    if (rows.length === 0) rows = await fetchGViz('');
+    debugLog.push('GViz Sheet1 returned ' + rows.length + ' rows');
+    if (rows.length === 0) {
+      debugLog.push('Trying GViz with no sheet name...');
+      rows = await fetchGViz('');
+      debugLog.push('GViz (no name) returned ' + rows.length + ' rows');
+    }
     allRows = rows;
     success = true;
+    debugLog.push('✅ GViz success! ' + allRows.length + ' total rows loaded.');
+    if (allRows.length > 0) debugLog.push('First row keys: ' + Object.keys(allRows[0]).join(', '));
   } catch(e1) {
+    debugLog.push('❌ GViz failed: ' + e1.message);
     /* FALLBACK: Apps Script JSONP */
     try {
+      debugLog.push('Trying JSONP fallback...');
+      statusEl.textContent = '⏳ Trying Apps Script JSONP...';
       var rows2 = await fetchWithJSONP(SCRIPT_URL + '?action=getAll');
       allRows = Array.isArray(rows2) ? rows2 : (rows2.data||rows2.rows||[]);
       success = true;
+      debugLog.push('✅ JSONP success! ' + allRows.length + ' rows.');
     } catch(e2) {
+      debugLog.push('❌ JSONP failed: ' + e2.message);
       success = false;
     }
   }
 
-  if (success) {
+  if (success && allRows.length > 0) {
     statusEl.style.display = 'none';
     setEl('last-updated', 'Updated ' + new Date().toLocaleTimeString('en-PH',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit'}));
     applyFilter();
+  } else if (success && allRows.length === 0) {
+    statusEl.className = 'status-msg warn';
+    statusEl.textContent = '⚠️ Connected but no data found. Debug: ' + debugLog.join(' → ');
+    document.getElementById('dashboard').style.display = 'block';
+    applyFilter();
   } else {
     statusEl.className = 'status-msg error';
-    statusEl.textContent = '⚠️ Could not load data. Make sure your Google Sheet is shared as "Anyone with the link can view".';
+    statusEl.innerHTML = '❌ Could not load data.<br><small style="opacity:0.8;">Debug: ' + debugLog.join(' → ') + '</small>';
     document.getElementById('fix-instructions').style.display = 'block';
     document.getElementById('dashboard').style.display = 'none';
   }
