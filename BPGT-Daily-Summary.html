@@ -426,6 +426,20 @@
         <div class="metric-sub" id="m-preg-pct"></div>
       </div>
     </div>
+
+    <!-- PASSENGER BREAKDOWN CHART -->
+    <div class="two-col" style="margin-bottom:10px;">
+      <div class="card">
+        <div class="card-title">Passenger category breakdown</div>
+        <div id="pax-category-chart" style="margin-top:4px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Male vs Female by category</div>
+        <canvas id="gender-by-cat-chart" style="width:100%;max-height:220px;"></canvas>
+        <div id="gender-by-cat-legend" style="margin-top:10px;font-size:11px;"></div>
+      </div>
+    </div>
+
     <div class="three-col" style="margin-bottom:4px;">
       <div class="card">
         <div class="card-title">Gender split</div>
@@ -668,6 +682,7 @@ function renderDashboard(rows) {
   setEl('period-range', lbl.range);
 
   var trips=rows.length, totalPax=0, adults=0, children=0, seniors=0, pwd=0, preg=0, males=0, females=0;
+  var g_am=0,g_af=0,g_cm=0,g_cf=0,g_sm=0,g_sf=0,g_pm=0,g_pf=0;
   var departures=0, arrivals=0;
   var vehicles={}, routes={}, collectors={}, collRevenue={};
   var paidFee=0, unpaidFee=0, waivedFee=0;
@@ -677,10 +692,23 @@ function renderDashboard(rows) {
 
   rows.forEach(function(r){
     totalPax += g(r,'TOTAL PASSENGERS','Total Passengers','total_passengers');
-    adults   += g(r,'ADULTS','Adults');
-    children += g(r,'CHILDREN','Children');
-    seniors  += g(r,'SENIORS','Seniors');
-    pwd      += g(r,'PWDs','PWD','pwd');
+    // Adults = A.M. + A.F.
+    var ram=g(r,'A.M.'), raf=g(r,'A.F.');
+    adults   += g(r,'ADULTS','Adults') || (ram + raf);
+    g_am+=ram; g_af+=raf;
+    // Children = C.M. + C.F.
+    var rcm=g(r,'C.M.'), rcf=g(r,'C.F.');
+    children += g(r,'CHILDREN','Children') || (rcm + rcf);
+    g_cm+=rcm; g_cf+=rcf;
+    // Seniors = S.M. + S.F.
+    var rsm=g(r,'S.M.'), rsf=g(r,'S.F.');
+    seniors  += g(r,'SENIORS','Seniors') || (rsm + rsf);
+    g_sm+=rsm; g_sf+=rsf;
+    // PWD = PWD.M. + PWD.F.
+    var rpm=g(r,'PWD.M.'), rpf=g(r,'PWD.F.');
+    pwd      += g(r,'PWDs','PWD','pwd') || (rpm + rpf);
+    g_pm+=rpm; g_pf+=rpf;
+    // Pregnant = PREG.F.
     preg     += g(r,'PREG.F.','Pregnant','preg','PREGNANT');
     // Males = sum of actual sheet columns: A.M. + C.M. + S.M. + PWD.M.
     var rowMales = g(r,'MALES','Males') || (g(r,'A.M.') + g(r,'C.M.') + g(r,'S.M.') + g(r,'PWD.M.'));
@@ -781,6 +809,10 @@ function renderDashboard(rows) {
   setEl('m-pwd', pwd.toLocaleString('en-PH')); setEl('m-pwd-pct',pct(pwd,totalPax));
   setEl('m-preg', preg.toLocaleString('en-PH')); setEl('m-preg-pct',pct(preg,totalPax));
 
+  /* PASSENGER CATEGORY CHART */
+  renderPaxChart(totalPax, adults, children, seniors, pwd, preg,
+    g_am, g_af, g_cm, g_cf, g_sm, g_sf, g_pm, g_pf);
+
   /* GENDER */
   var gt=males+females||1, mp=Math.round(males/gt*100);
   document.getElementById('gender-bar').style.width=mp+'%';
@@ -840,6 +872,97 @@ function renderDashboard(rows) {
   }
 
   document.getElementById('dashboard').style.display='block';
+}
+
+
+/* ── PASSENGER BREAKDOWN CHARTS ── */
+function renderPaxChart(totalPax, adults, children, seniors, pwd, preg, am, af, cm, cf, sm, sf, pm, pf) {
+  var t = totalPax || 1;
+
+  /* CATEGORY BAR CHART */
+  var cats = [
+    { label:'Adults',   val: adults,   male: am, female: af, color:'#378ADD' },
+    { label:'Children', val: children, male: cm, female: cf, color:'#1D9E75' },
+    { label:'Seniors',  val: seniors,  male: sm, female: sf, color:'#7F77DD' },
+    { label:'PWD',      val: pwd,      male: pm, female: pf, color:'#EF9F27' },
+    { label:'Pregnant', val: preg,     male: 0,  female: preg, color:'#E2608A' },
+  ];
+  var maxVal = Math.max.apply(null, cats.map(function(c){return c.val;})) || 1;
+  var catEl = document.getElementById('pax-category-chart');
+  catEl.innerHTML = cats.map(function(cat) {
+    var pct = Math.round(cat.val / t * 100);
+    var barW = Math.round(cat.val / maxVal * 100);
+    var mPct = (cat.val > 0) ? Math.round(cat.male / cat.val * 100) : 0;
+    var fPct = 100 - mPct;
+    return '<div style="margin-bottom:10px;">' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">' +
+        '<span style="color:var(--text-muted);font-weight:500;">' + cat.label + '</span>' +
+        '<span style="color:var(--text);font-weight:600;">' + cat.val.toLocaleString("en-PH") +
+          ' <span style="color:var(--text-faint);font-weight:400;">(' + pct + '%)</span></span>' +
+      '</div>' +
+      '<div style="height:14px;background:var(--gray-100);border-radius:4px;overflow:hidden;position:relative;">' +
+        '<div style="position:absolute;left:0;top:0;height:100%;width:' + barW + '%;background:' + cat.color + ';border-radius:4px;transition:width 0.5s;"></div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-faint);margin-top:2px;">' +
+        '<span>♂ ' + cat.male.toLocaleString("en-PH") + ' (' + mPct + '%)</span>' +
+        '<span>♀ ' + cat.female.toLocaleString("en-PH") + ' (' + fPct + '%)</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  /* STACKED BAR CHART — Male vs Female by category */
+  var legendEl = document.getElementById('gender-by-cat-legend');
+  var canvas = document.getElementById('gender-by-cat-chart');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth || 320;
+  canvas.height = 200;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  var validCats = cats.filter(function(c){ return c.val > 0; });
+  if (validCats.length === 0) {
+    ctx.fillStyle = '#888';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data', canvas.width/2, canvas.height/2);
+    return;
+  }
+
+  var padL=10, padR=10, padT=10, padB=40;
+  var chartW = canvas.width - padL - padR;
+  var chartH = canvas.height - padT - padB;
+  var barW2 = Math.floor(chartW / validCats.length * 0.7);
+  var gap = Math.floor(chartW / validCats.length);
+  var maxCat = Math.max.apply(null, validCats.map(function(c){return c.val;})) || 1;
+
+  validCats.forEach(function(cat, i) {
+    var x = padL + i * gap + (gap - barW2) / 2;
+    var totalH = Math.round(cat.val / maxCat * chartH);
+    var maleH = cat.val > 0 ? Math.round(cat.male / cat.val * totalH) : 0;
+    var femaleH = totalH - maleH;
+
+    // Female (top)
+    ctx.fillStyle = '#E2608A';
+    ctx.fillRect(x, padT + chartH - totalH, barW2, femaleH);
+    // Male (bottom)
+    ctx.fillStyle = '#378ADD';
+    ctx.fillRect(x, padT + chartH - maleH, barW2, maleH);
+
+    // Label
+    ctx.fillStyle = '#5F5E5A';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(cat.label, x + barW2/2, padT + chartH + 14);
+    ctx.fillStyle = '#1a1a18';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText(cat.val.toLocaleString("en-PH"), x + barW2/2, padT + chartH - totalH - 3);
+  });
+
+  legendEl.innerHTML =
+    '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;">' +
+    '<span style="width:12px;height:12px;background:#378ADD;border-radius:2px;display:inline-block;"></span>Male</span>' +
+    '<span style="display:inline-flex;align-items:center;gap:4px;">' +
+    '<span style="width:12px;height:12px;background:#E2608A;border-radius:2px;display:inline-block;"></span>Female</span>';
 }
 
 /* ── FETCH via Google Visualization API (works from file://, no CORS issues) ── */
