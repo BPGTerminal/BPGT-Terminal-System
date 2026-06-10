@@ -846,56 +846,37 @@ function setNewURL() {
   if (newUrl) { SCRIPT_URL = newUrl; loadData(); }
 }
 
-function fetchGViz(sheetName) {
-  return new Promise(function(resolve, reject) {
-    var cbName = 'gviz_cb_' + Date.now();
-    var script = document.createElement('script');
-    var timer = setTimeout(function(){
-      delete window[cbName];
-      if (script.parentNode) document.body.removeChild(script);
-      reject(new Error('GViz timeout'));
-    }, 15000);
-    window[cbName] = function(resp) {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (script.parentNode) document.body.removeChild(script);
-      try {
-        // Parse GViz response into row objects
-        var table = resp.table;
-        if (!table || !table.cols || !table.rows) { resolve([]); return; }
-        // Build headers from column labels
-        var headers = table.cols.map(function(c){ return (c.label||c.id||'').trim(); });
-        var rows = [];
-        table.rows.forEach(function(row) {
-          if (!row.c) return;
-          var obj = {};
-          var hasData = false;
-          row.c.forEach(function(cell, i) {
-            var val = cell ? (cell.v !== null && cell.v !== undefined ? cell.v : '') : '';
-            // Format dates from GViz Date() objects
-            if (typeof val === 'object' && val !== null && val.getFullYear) {
-              val = (val.getMonth()+1) + '/' + val.getDate() + '/' + val.getFullYear();
-            }
-            obj[headers[i]] = String(val);
-            if (val !== '') hasData = true;
-          });
-          if (hasData) rows.push(obj);
-        });
-        resolve(rows);
-      } catch(e) { reject(e); }
-    };
-    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
-              '/gviz/tq?tqx=out:json&callback=' + cbName +
-              (sheetName ? '&sheet=' + encodeURIComponent(sheetName) : '') +
-              '&t=' + Date.now();
-    script.src = url;
-    script.onerror = function(){
-      clearTimeout(timer);
-      delete window[cbName];
-      reject(new Error('GViz script failed'));
-    };
-    document.body.appendChild(script);
+async function fetchGViz(sheetName) {
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+            '/gviz/tq?tqx=out:json' +
+            (sheetName ? '&sheet=' + encodeURIComponent(sheetName) : '') +
+            '&t=' + Date.now();
+  var res = await fetch(url);
+  var text = await res.text();
+  // GViz wraps response in: google.visualization.Query.setResponse({...});
+  var jsonStr = text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, '');
+  var resp = JSON.parse(jsonStr);
+  var table = resp.table;
+  if (!table || !table.cols || !table.rows) return [];
+  var headers = table.cols.map(function(c){ return (c.label||c.id||'').trim(); });
+  var rows = [];
+  table.rows.forEach(function(row) {
+    if (!row.c) return;
+    var obj = {}, hasData = false;
+    row.c.forEach(function(cell, i) {
+      var val = cell ? (cell.v !== null && cell.v !== undefined ? cell.v : '') : '';
+      if (typeof val === 'string' && val.match(/^Date\((\d+),(\d+),(\d+)\)$/)) {
+        var m = val.match(/^Date\((\d+),(\d+),(\d+)\)$/);
+        val = (parseInt(m[2])+1) + '/' + m[3] + '/' + m[1];
+      } else if (cell && cell.f && String(cell.f).match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+        val = cell.f; // use formatted date string if available
+      }
+      obj[headers[i]] = String(val);
+      if (String(val).trim() !== '') hasData = true;
+    });
+    if (hasData) rows.push(obj);
   });
+  return rows;
 }
 
 async function loadData() {
